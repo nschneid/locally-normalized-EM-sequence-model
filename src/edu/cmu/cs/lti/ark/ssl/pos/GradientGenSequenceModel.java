@@ -107,7 +107,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 		return numLabels;
 	}
 	
-	public int getNumObservations() {
+	public int getNumObservationTypes() {
 		return numObservations;
 	}
 	

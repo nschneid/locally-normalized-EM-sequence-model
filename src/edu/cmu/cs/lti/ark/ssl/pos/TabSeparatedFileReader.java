@@ -65,11 +65,15 @@ public class TabSeparatedFileReader {
 	}
 	
 	public static String[] getToks(String line) {
+		return getToks(line, " \t", true);
+	}
+	
+	public static String[] getToks(String line, String delim, boolean skipWhitespaceToks) {
 		List<String> tokList = new ArrayList<String>();
-		StringTokenizer st = new StringTokenizer(line.trim(), " \t", true);
+		StringTokenizer st = new StringTokenizer(line.trim(), delim, true);
 		while (st.hasMoreTokens()) {
 			String tok = st.nextToken().trim();
-			if (tok.equals("")) {
+			if (skipWhitespaceToks && tok.equals("")) {
 				continue;
 			}
 			tokList.add(tok);
@@ -78,4 +82,5 @@ public class TabSeparatedFileReader {
 		tokList.toArray(arr);
 		return arr;
 	}
+	
 }

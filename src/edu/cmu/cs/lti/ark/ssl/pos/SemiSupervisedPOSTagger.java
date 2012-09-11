@@ -83,6 +83,7 @@ public class SemiSupervisedPOSTagger {
 	 */
 	private String trainSet;
 	private String unlabeledSet;
+	private String unlabeledFeatureFile;
 	private boolean useUnlabeledData;
 	private String testSet;	
 	private String trainOrTest;	
@@ -108,7 +109,9 @@ public class SemiSupervisedPOSTagger {
 	private int randSeedIndex;
 	private String execPoolDir;
 	private Collection<Pair<List<String>, List<String>>> sequences;
-	private Collection<List<String>> uSequences;
+	private List<List<String>> uSequences;
+	/** features for each sequence, first of which is the token */
+	private String[][] uFeatures;
 	private boolean restartTraining;
 	private String restartModelFile;
 	private boolean useSameSetOfFeatures;
@@ -159,6 +162,8 @@ public class SemiSupervisedPOSTagger {
 	 * unlabeled observations
 	 */
 	private int[][] uObservations;
+
+	
 
 
 	public static void main(String[] args) {
@@ -240,6 +245,9 @@ public class SemiSupervisedPOSTagger {
 			if (useUnlabeledData) {
 				unlabeledSet = 
 					(String) parser.getOptionValue(options.unlabeledSet);
+				unlabeledFeatureFile = 
+					(String) parser.getOptionValue(options.unlabeledFeatureFile);
+				assert (unlabeledSet==null) ^ (unlabeledFeatureFile==null);
 				numUnLabeledSentences =
 					(Integer) parser.getOptionValue(options.numUnLabeledSentences);
 				useSameSetOfFeatures = parser.getOptionValue(options.useSameSetOfFeatures)
@@ -273,6 +281,9 @@ public class SemiSupervisedPOSTagger {
 					}
 					unlabeledSet = 
 						(String) parser.getOptionValue(options.unlabeledSet);
+					unlabeledFeatureFile = 
+							(String) parser.getOptionValue(options.unlabeledFeatureFile);
+					assert (unlabeledSet==null) ^ (unlabeledFeatureFile==null);
 					numUnLabeledSentences =
 						(Integer) parser.getOptionValue(options.numUnLabeledSentences);
 					useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
@@ -653,7 +664,7 @@ public class SemiSupervisedPOSTagger {
 
 	public List<Pair<Integer,Double>>[][] getActiveCRFTransFeatures(
 			List<TransFeatureTemplate> templates, 
-			int numObservations, 
+			int numObservationTypes, 
 			int numLabels) {
 		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numLabels];
 		for (int s0=0; s0<numLabels; ++s0) {
@@ -699,7 +710,7 @@ public class SemiSupervisedPOSTagger {
 
 	public List<Pair<Integer,Double>>[][] getActiveTransFeatures(
 			List<TransFeatureTemplate> templates, 
-			int numObservations, 
+			int numObservationTypes, 
 			int numLabels, 
 			int startLabel, 
 			int stopLabel) {
@@ -732,13 +743,13 @@ public class SemiSupervisedPOSTagger {
 
 	public List<Pair<Integer,Double>>[][] getActiveCRFEmitFeatures(
 			List<EmitFeatureTemplate> templates, 
-			int numObservations, 
+			int numObservationTypes, 
 			int numLabels) {
 
-		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numObservations];
-		System.out.println(""+numLabels+"  "+numObservations+"\n");
+		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numObservationTypes];
+		System.out.println(""+numLabels+"  "+numObservationTypes+"\n");
 		for (int s=0; s<numLabels; ++s) {
-			for (int i=0; i<numObservations; ++i) {
+			for (int i=0; i<numObservationTypes; ++i) {
 				activeFeatures[s][i] = new ArrayList<Pair<Integer,Double>>();
 				for (EmitFeatureTemplate template : templates) {
 					List<Pair<String, Double>> features = template.getFeatures(s, indexToWord.get(i));
@@ -759,14 +770,15 @@ public class SemiSupervisedPOSTagger {
 	}
 
 
-	public List<Pair<Integer,Double>>[][] getActiveEmitFeatures(List<EmitFeatureTemplate> templates, int numObservations, int numLabels, int startLabel, int stopLabel) {
-		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numObservations];
+	public List<Pair<Integer,Double>>[][] getActiveEmitFeatures(List<EmitFeatureTemplate> templates, 
+			int numObservationTypes, int numLabels, int startLabel, int stopLabel, String[] featS) {
+		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numObservationTypes];
 		for (int s=0; s<numLabels; ++s) {
 			if (s != startLabel && s != stopLabel) {
-				for (int i=0; i<numObservations; ++i) {
+				for (int i=0; i<numObservationTypes; ++i) {
 					activeFeatures[s][i] = new ArrayList<Pair<Integer,Double>>();
 					for (EmitFeatureTemplate template : templates) {
-						List<Pair<String, Double>> features = template.getFeatures(s, indexToWord.get(i));
+						List<Pair<String, Double>> features = template.getFeatures(s, ((featS!=null) ? featS[i] : indexToWord.get(i)));
 						for (Pair<String, Double> feature : features) {
 							int index = POSUtil.indexString(feature.getFirst(), 
 									indexToFeature, featureToIndex);
@@ -784,7 +796,7 @@ public class SemiSupervisedPOSTagger {
 		return activeFeatures;
 	}
 
-	public List<Pair<Integer, Double>>[][] getActiveStackedFeatures(int numObservations, int numLabels, int startLabel, int stopLabel) {
+	public List<Pair<Integer, Double>>[][] getActiveStackedFeatures(int numObservationTypes, int numLabels, int startLabel, int stopLabel) {
 		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][indexToPOS.size()];
 		POSFeatureTemplates templates1 = new POSFeatureTemplates();
 		EmitFeatureTemplate template = 
@@ -932,10 +944,25 @@ public class SemiSupervisedPOSTagger {
 			 * account for unlabeled data
 			 */
 			if (useUnlabeledData) {
-				uSequences = 
-					UnlabeledSentencesReader.readSequences(unlabeledSet, 
+				if (unlabeledSet!=null) {
+					uSequences = 
+						UnlabeledSentencesReader.readSequences(unlabeledSet, 
+								this.numUnLabeledSentences, 
+								this.maxSentenceLength);
+				}
+				else {
+					uSequences = UnlabeledSentencesReader.readSequencesOneTokenPerLine(unlabeledFeatureFile,
 							this.numUnLabeledSentences, 
 							this.maxSentenceLength);
+					/*uFeatures = new String[uSequences.size()][];
+					for (int i=0; i<uSequences.size(); i++) {
+						List<String> seq = uSequences.get(i);
+						uFeatures[i] = (String[])seq.toArray();
+						for (int j=0; j<uFeatures[i].length; j++) {
+							seq.set(j, uFeatures[i][j].split("\t")[0]);	// just the token
+						}
+					}*/
+				}
 				uObservations = 
 					POSUtil.getObservationsFromUnlabeledSet(uSequences, 
 							indexToWord, 
@@ -944,11 +971,27 @@ public class SemiSupervisedPOSTagger {
 			logObservationInfo();
 			logInputInfo();
 		} else { //fully unlabeled data
-			log.info("Totally unlabeled training set:" + unlabeledSet);
+			log.info("Totally unlabeled training set:" + ((unlabeledSet!=null) ? unlabeledSet : unlabeledFeatureFile));
+			
+			if (unlabeledSet!=null) {
 			uSequences = 
-				UnlabeledSentencesReader.readSequences(unlabeledSet, 
+				UnlabeledSentencesReader.readSequences(((unlabeledSet!=null) ? unlabeledSet : unlabeledFeatureFile), 
 						this.numUnLabeledSentences, 
 						this.maxSentenceLength);
+			}
+			else {
+				uSequences = UnlabeledSentencesReader.readSequencesOneTokenPerLine(unlabeledFeatureFile,
+						this.numUnLabeledSentences, 
+						this.maxSentenceLength);
+				/*uFeatures = new String[uSequences.size()][];
+				for (int i=0; i<uSequences.size(); i++) {
+					List<String> seq = uSequences.get(i);
+					uFeatures[i] = (String[])seq.toArray();
+					for (int j=0; j<uFeatures[i].length; j++) {
+						seq.set(j, uFeatures[i][j].split("\t")[0]);	// just the token
+					}
+				}*/
+			}
 			uObservations = 
 				POSUtil.getObservationsFromUnlabeledSet(uSequences, 
 						indexToWord, 
@@ -1016,15 +1059,30 @@ public class SemiSupervisedPOSTagger {
 			interpolationFeature =
 				POSFeatureTemplates.getInterpolationFeatures(numHelperLanguages);
 		}
-		List<EmitFeatureTemplate> emitFeatures = 
-			POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
+		
+		List<EmitFeatureTemplate> emitFeatures;
+		if (uFeatures!=null) {
+			emitFeatures = POSFeatureTemplates.getEmitFeaturesLoaded(useStandardFeatures, 
 					lengthNGramSuffixFeature,
 					useTagDictionary, wordToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
 					distSimTable,
-					namesArray);	
+					namesArray,
+					true);
+		}
+		else {
+			emitFeatures = 
+				POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
+					lengthNGramSuffixFeature,
+					useTagDictionary, wordToIndex, 
+					tagDictionary,
+					tagsToClusters,
+					noahsFeatures,
+					distSimTable,
+					namesArray);
+		}
 
 		FileWriter curveOut = null;
 		try {
@@ -1037,17 +1095,18 @@ public class SemiSupervisedPOSTagger {
 
 		int numLabels = indexToPOS.size();
 
+String[] tabSeparatedEmitFeatures = null;
 		// checking if we are using only unlabeled data
 		if (useOnlyUnlabeledData) {
 			if (!useInterpolation) {
 				trainUnsupervisedFeatureHMM(numLabels,
 						transFeatures,
-						emitFeatures,
+						emitFeatures, tabSeparatedEmitFeatures, 
 						curveOut);
 			} else {
 				trainUnsupervisedFeatureHMMInterpolation(numLabels,
 						interpolationFeature,
-						emitFeatures,
+						emitFeatures, tabSeparatedEmitFeatures, 
 						curveOut);
 			}
 		} else if (!useUnlabeledData) { // a supervised model
@@ -1055,24 +1114,24 @@ public class SemiSupervisedPOSTagger {
 				if (!trainHMMDiscriminatively)  {
 					trainSupervisedFeatureHMM(numLabels, 
 							transFeatures,
-							emitFeatures,
+							emitFeatures, tabSeparatedEmitFeatures, 
 							curveOut);
 				} else {
 					trainSupervisedFeatureHMMDiscriminatively(numLabels, 
 							transFeatures,
-							emitFeatures,
+							emitFeatures, tabSeparatedEmitFeatures, 
 							curveOut);
 				}
 			} else {
 				trainCRF(numLabels,
 						transFeatures,
-						emitFeatures,
+						emitFeatures, 
 						curveOut);
 			}		
 		} else { // a model with a discriminative as well as generative objective
 			trainSemiSupervisedModel(numLabels, 
 					transFeatures, 
-					emitFeatures, 
+					emitFeatures, tabSeparatedEmitFeatures, 
 					curveOut);
 		}
 	}
@@ -1080,6 +1139,7 @@ public class SemiSupervisedPOSTagger {
 	public void trainSemiSupervisedModel(int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
+			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 
 		int stopLabel = numLabels;
@@ -1105,7 +1165,8 @@ public class SemiSupervisedPOSTagger {
 					indexToWord.size(), 
 					numLabels + 2, 
 					startLabel, 
-					stopLabel);		
+					stopLabel,
+					tabSeparatedEmitFeats);		
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
 				getActiveStackedFeatures(indexToWord.size(), 
@@ -1190,6 +1251,7 @@ public class SemiSupervisedPOSTagger {
 			int numLabels, 
 			InterpolationFeatureTemplate interpolationFeature,
 			List<EmitFeatureTemplate> emitFeatures,
+			String[] tabSeparatedEmitFeatures,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = 
 			new GradientSequenceInterpolatedModel(uObservations,
@@ -1203,22 +1265,8 @@ public class SemiSupervisedPOSTagger {
 					grad.getStartLabel(), 
 					grad.getStopLabel());
 			
-		activeEmitFeatures = 
-			getActiveEmitFeatures(emitFeatures, 
-					grad.getNumObservations(), 
-					grad.getNumLabels(), 
-					grad.getStartLabel(), 
-					grad.getStopLabel());
-
-		if (useStackedFeatures) {
-			activeStackedFeatures = 
-				getActiveStackedFeatures(grad.getNumObservations(), 
-						grad.getNumLabels(), 
-						grad.getStartLabel(), 
-						grad.getStopLabel());
-		}
-
-		log.info("Num features: " + indexToFeature.size());
+		_h1(emitFeatures, tabSeparatedEmitFeatures, grad);
+		
 		double[] regularizationWeights = 
 			getRegularizationWeights();
 		double[] regularizationBiases = 
@@ -1229,6 +1277,33 @@ public class SemiSupervisedPOSTagger {
 							   indexToFeature.size(), 
 							   regularizationWeights, 
 							   regularizationBiases);
+		
+		_h2(curveOut, grad);
+	}	
+
+	/** shared helper function to avoid code duplication */
+	private void _h1(List<EmitFeatureTemplate> emitFeatures, String[] tabSeparatedEmitFeatures, GradientSequenceModel grad) {
+		activeEmitFeatures = 
+				getActiveEmitFeatures(emitFeatures, 
+						grad.getNumObservationTypes(), 
+						grad.getNumLabels(), 
+						grad.getStartLabel(), 
+						grad.getStopLabel(),
+						tabSeparatedEmitFeatures);
+
+		if (useStackedFeatures) {
+			activeStackedFeatures = 
+				getActiveStackedFeatures(grad.getNumObservationTypes(), 
+						grad.getNumLabels(), 
+						grad.getStartLabel(), 
+						grad.getStopLabel());
+		}
+
+		log.info("Num features: " + indexToFeature.size());
+	}
+	
+	/** shared helper function to avoid code duplication */
+	private void _h2(FileWriter curveOut, GradientSequenceModel grad) {
 		// Initialize weights to 0.0;
 		double[] initialWeights;
 		if (regParametersModel != null) {
@@ -1238,7 +1313,7 @@ public class SemiSupervisedPOSTagger {
 			initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
 			if (initTransProbs != null) {
 				initialWeights = 
-					initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
+						initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
 			}
 		}
 		if (useBiasFeature) {
@@ -1252,7 +1327,7 @@ public class SemiSupervisedPOSTagger {
 		model.setIndexToPOS(indexToPOS);
 		model.setPosToIndex(posToIndex);
 		PrintLikelihoodCallbackCRF crfCallBack = 
-			new PrintLikelihoodCallbackCRF(model, curveOut);
+				new PrintLikelihoodCallbackCRF(model, curveOut);
 		log.info("Training with LBFGS");
 		double[] w = LBFGSOptimizer.optimize(grad,
 				initialWeights, 
@@ -1261,12 +1336,13 @@ public class SemiSupervisedPOSTagger {
 		log.info("Finished training with LBFGS");
 		model.setWeights(w);
 		BasicFileIO.writeSerializedObject(modelFile, model);
-	}	
-
+	}
+	
 	public void trainUnsupervisedFeatureHMM(
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
+			String[] tabSeparatedEmitFeatures,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = 
 			new GradientGenSequenceModel(uObservations,
@@ -1275,27 +1351,13 @@ public class SemiSupervisedPOSTagger {
 		// Cache active features
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
-					grad.getNumObservations(), 
+					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
 					grad.getStopLabel());
-
-		activeEmitFeatures = 
-			getActiveEmitFeatures(emitFeatures, 
-					grad.getNumObservations(), 
-					grad.getNumLabels(), 
-					grad.getStartLabel(), 
-					grad.getStopLabel());
-
-		if (useStackedFeatures) {
-			activeStackedFeatures = 
-				getActiveStackedFeatures(grad.getNumObservations(), 
-						grad.getNumLabels(), 
-						grad.getStartLabel(), 
-						grad.getStopLabel());
-		}
-
-		log.info("Num features: " + indexToFeature.size());
+		
+		_h1(emitFeatures, tabSeparatedEmitFeatures, grad);
+		
 		double[] regularizationWeights = 
 			getRegularizationWeights(transFeatures, emitFeatures);
 		double[] regularizationBiases = 
@@ -1310,38 +1372,8 @@ public class SemiSupervisedPOSTagger {
 				indexToFeature.size(), 
 				regularizationWeights, 
 				regularizationBiases);
-		// Initialize weights to 0.0;
-		double[] initialWeights;
-		if (regParametersModel != null) {
-			initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
-			initialWeights = initializeFeatureWeightsWithTrainedValues(initialWeights);
-		} else {
-			initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
-			if (initTransProbs != null) {
-				initialWeights = 
-					initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
-			}
-		}
-		if (useBiasFeature) {
-			initialWeights[featureToIndex.get("bias")] = biasFeatureBias;
-		}
-		grad.setWeights(initialWeights);
-		POSModel model = new POSModel();
-		model.setFeatureIndexCounts(featureIndexCounts);
-		model.setFeatureToIndex(featureToIndex);
-		model.setIndexToFeature(indexToFeature);
-		model.setIndexToPOS(indexToPOS);
-		model.setPosToIndex(posToIndex);
-		PrintLikelihoodCallbackCRF crfCallBack = 
-			new PrintLikelihoodCallbackCRF(model, curveOut);
-		log.info("Training with LBFGS");
-		double[] w = LBFGSOptimizer.optimize(grad,
-				initialWeights, 
-				crfCallBack,
-				iters);
-		log.info("Finished training with LBFGS");
-		model.setWeights(w);
-		BasicFileIO.writeSerializedObject(modelFile, model);
+		
+		_h2(curveOut, grad);
 	}	
 
 	private double[] initializeFeatureWeightsWithInitialTransitionProbs(
@@ -1399,6 +1431,7 @@ public class SemiSupervisedPOSTagger {
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
+			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 		int stopLabel = numLabels;
 		int startLabel = numLabels + 1;
@@ -1426,7 +1459,8 @@ public class SemiSupervisedPOSTagger {
 					indexToWord.size(), 
 					numLabels + 2, 
 					startLabel, 
-					stopLabel);	
+					stopLabel,
+					tabSeparatedEmitFeats);	
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
 				getActiveStackedFeatures(indexToWord.size(), 
@@ -1492,6 +1526,7 @@ public class SemiSupervisedPOSTagger {
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
+			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = new SupervisedGenSequenceModel(lObservations, goldLabels, 
 				numLabels, indexToWord.size()); 
@@ -1508,20 +1543,21 @@ public class SemiSupervisedPOSTagger {
 		// Cache active features
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
-					grad.getNumObservations(), 
+					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
 					grad.getStopLabel());
 
 		activeEmitFeatures = 
 			getActiveEmitFeatures(emitFeatures, 
-					grad.getNumObservations(), 
+					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
-					grad.getStopLabel());
+					grad.getStopLabel(),
+					tabSeparatedEmitFeats);
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
-				getActiveStackedFeatures(grad.getNumObservations(), 
+				getActiveStackedFeatures(grad.getNumObservationTypes(), 
 						grad.getNumLabels(), 
 						grad.getStartLabel(), 
 						grad.getStopLabel());
@@ -1884,21 +1920,21 @@ public class SemiSupervisedPOSTagger {
 				indexToWord.size());
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
-					grad.getNumObservations(), 
+					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
 					grad.getStopLabel());
 
 		activeEmitFeatures = 
 			getActiveEmitFeatures(emitFeatures, 
-					grad.getNumObservations(), 
+					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
-					grad.getStopLabel());
+					grad.getStopLabel(), null);
 
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
-				getActiveStackedFeatures(grad.getNumObservations(), 
+				getActiveStackedFeatures(grad.getNumObservationTypes(), 
 						grad.getNumLabels(), 
 						grad.getStartLabel(), 
 						grad.getStopLabel());

@@ -49,7 +49,7 @@ public class POSUtil {
 	}
 	
 	public static int[][] getObservationsFromUnlabeledSet(
-			Collection<List<String>> sequences,
+			List<List<String>> sequences,
 			ArrayList<String> indexToWord,
 			Map<String, Integer> wordToIndex
 			) {

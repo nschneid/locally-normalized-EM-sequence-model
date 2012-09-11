@@ -35,7 +35,7 @@ public abstract class GradientSequenceModel extends CachingDifferentiableFunctio
 	
 	abstract public int getNumLabels();
 	
-	abstract public int getNumObservations();
+	abstract public int getNumObservationTypes();
 	
 	abstract public int getStartLabel();
 	

@@ -121,7 +121,7 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 		return numLabels;
 	}
 
-	public int getNumObservations() {
+	public int getNumObservationTypes() {
 		return numObservations;
 	}
 

@@ -6,6 +6,7 @@ package edu.cmu.cs.lti.ark.ssl.pos;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -631,7 +632,38 @@ public class POSFeatureTemplates {
 			features.add(Pair.makePair(String.format(name+"|%d", label2), 1.0));
 			return features;
 		}
-	}	
+	}
+	
+	// nschneid
+	/** features loaded from an input file */
+	public class LoadedFeatures extends BaseEmitFeature {
+		private final boolean positional;
+		
+		/** if positional is true, each position in the tab-separated feature list 
+		 * is associated with a different feature name.
+		 * otherwise, treat the list as a bag of features.
+		 */
+		public LoadedFeatures(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0, 
+				boolean positional) {
+			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			this.positional = positional;
+		}
+		public List<Pair<String, Double>> getFeatures(int label, String tabSepFeats) {
+			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
+			
+			int f = 0;
+			for (String fs : tabSepFeats.split("\t")) {
+				if (positional)
+					features.add(Pair.makePair(String.format("feat%d:%s|%d", f, fs, label), 1.0));
+				else
+					features.add(Pair.makePair(String.format("%s|%d", fs, label), 1.0));
+				f++;
+			}
+			
+			return features;
+		}
+	}
+	
 
 	public static InterpolationFeatureTemplate
 		getInterpolationFeatures(int numLanguages) {
@@ -715,21 +747,61 @@ public class POSFeatureTemplates {
 			log.info(feat.getName());
 		}
 		return emitFeatures;
-	}	
+	}
 
+	
+	public static List<EmitFeatureTemplate> 
+	getEmitFeaturesLoaded(boolean useStandardFeatures, 
+			int lengthNGramSuffixFeature,
+			boolean uTd, Map<String, Integer> wi, 
+			int[][] td,
+			int[][] tM,
+			Map<String, String> noahsFeatures,
+			Map<String, double[]> distSimTable,
+			String[] namesArray, 
+			boolean positional) {		
+		POSFeatureTemplates templates = new POSFeatureTemplates();
+		List<EmitFeatureTemplate> emitFeatures = new ArrayList<EmitFeatureTemplate>();
+		
+		emitFeatures.add(templates.new EmitIndicatorFeature(uTd, wi, td, tM));
+		
+		emitFeatures.add(templates.new LoadedFeatures(uTd, wi, td, tM, positional));
+		
+		log.info("Emit features:");
+		for (EmitFeatureTemplate feat : emitFeatures) {
+			log.info(feat.getName());
+		}
+		return emitFeatures;
+	}
+	
+public static boolean lowercaseTypes = false;
+public static boolean constrainTagsByPOSSuffix = true;
+	
 	public static boolean isEmissionValid(boolean useTagDictionary, 
-			String word, 
+			String observation, 
 			Map<String, Integer> wordToIndex, 
 			int[][] tagDictionary,
 			int label,
 			int[][] tagMapping) {
 		if (!useTagDictionary) {
 			return true;
-		}		
-		word = word.toLowerCase();
+		}
+		
+		String word = observation.split("\t")[0];
+		
+		if (lowercaseTypes)
+			word = word.toLowerCase();
+		
 		int index = wordToIndex.get(word);
 		if (index >= tagDictionary.length) {
-			return true;
+			// word not in dictionary
+			if (constrainTagsByPOSSuffix) {
+				// backoff to all tags allowed for the POS
+				final String pos = word.substring(word.lastIndexOf("_"));
+				index = wordToIndex.get(pos);
+			}
+			if (index >= tagDictionary.length)
+				return true;
 		}
 		int[] allowedTags = tagDictionary[index];
 		if (allowedTags == null) {

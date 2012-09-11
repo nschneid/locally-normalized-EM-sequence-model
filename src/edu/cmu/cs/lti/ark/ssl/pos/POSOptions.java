@@ -13,9 +13,12 @@ public class POSOptions {
 	@Option(gloss = "Tagged sentences for training")
 	public CmdLineParser.Option trainSet;
 	
-	@Option(gloss = "Unlabeled sentences for SSL")
+	@Option(gloss = "Unlabeled sentences for SSL (raw text)")
 	public CmdLineParser.Option unlabeledSet;
-		
+	
+	@Option(gloss = "Unlabeled sentences for SSL (features)")
+	public CmdLineParser.Option unlabeledFeatureFile;	// nschneid
+	
 	@Option(gloss = "Whether to use unlabeled data")
 	public CmdLineParser.Option useUnlabeledData;
 	
@@ -161,6 +164,7 @@ public class POSOptions {
 		parser = new CmdLineParser();
 		trainSet = parser.addStringOption("trainSet");
 		unlabeledSet = parser.addStringOption("unlabeledSet");
+		unlabeledFeatureFile = parser.addStringOption("unlabeledFeatureFile");
 		useUnlabeledData = parser.addBooleanOption("useUnlabeledData");
 		testSet = parser.addStringOption("testSet");
 		trainOrTest = parser.addStringOption("trainOrTest");
