@@ -86,6 +86,7 @@ public class SemiSupervisedPOSTagger {
 	private String unlabeledFeatureFile;
 	private boolean useUnlabeledData;
 	private String testSet;	
+	private String testFeatureFile;
 	private String trainOrTest;	
 	private String modelFile;
 	private String runOutput;
@@ -298,6 +299,8 @@ public class SemiSupervisedPOSTagger {
 			}
 		} else {
 			testSet = (String) parser.getOptionValue(options.testSet);
+			testFeatureFile = (String) parser.getOptionValue(options.testFeatureFile);
+			assert (testSet==null) ^ (testFeatureFile==null);
 		}
 		modelFile = (String) parser.getOptionValue(options.modelFile);
 		runOutput = (String) parser.getOptionValue(options.runOutput);
@@ -918,7 +921,7 @@ public class SemiSupervisedPOSTagger {
 		if(!useOnlyUnlabeledData) {
 			log.info("Labeled training set:" + trainSet);
 			sequences =
-				TabSeparatedFileReader.readPOSSeqences(trainSet, 
+				TabSeparatedFileReader.readPOSSequences(trainSet, 
 						numLabeledSentences, 
 						maxSentenceLength);
 			if (useUnlabeledData) {
@@ -1023,7 +1026,7 @@ public class SemiSupervisedPOSTagger {
 
 		if (useStackedFeatures) {
 			Collection<Pair<List<String>, List<String>>> stackedSequences
-			= TabSeparatedFileReader.readPOSSeqences(stackedFile, 
+			= TabSeparatedFileReader.readPOSSequences(stackedFile, 
 					numStackedSentences, 
 					maxSentenceLength);			
 			Pair<int[][], int[][]> pairList = POSUtil.getObservationsAndGoldLabels(
@@ -1061,7 +1064,7 @@ public class SemiSupervisedPOSTagger {
 		}
 		
 		List<EmitFeatureTemplate> emitFeatures;
-		if (uFeatures!=null) {
+		if (unlabeledFeatureFile!=null) {
 			emitFeatures = POSFeatureTemplates.getEmitFeaturesLoaded(useStandardFeatures, 
 					lengthNGramSuffixFeature,
 					useTagDictionary, wordToIndex, 
@@ -1680,11 +1683,20 @@ String[] tabSeparatedEmitFeatures = null;
 	}	
 
 	public void test() {
-		log.info("test set:" + testSet);
-		Collection<Pair<List<String>, List<String>>>  sequences =
-			TabSeparatedFileReader.readPOSSeqences(testSet, 
+		log.info("test set:" + ((testSet!=null) ? testSet : testFeatureFile));
+		Collection<Pair<List<String>, List<String>>> sequences;
+		if (testSet!=null) {
+			sequences = TabSeparatedFileReader.readPOSSequences(testSet, 
 					numLabeledSentences, 
 					maxSentenceLength);
+		}
+		else {
+			sequences = TabSeparatedFileReader.readPOSFeatSequences(testFeatureFile, 
+					numLabeledSentences, 
+					maxSentenceLength);
+		}
+		
+		
 		if (useGlobalForLabeledData) {
 			testCRF(sequences);
 		} else {
@@ -1713,7 +1725,7 @@ String[] tabSeparatedEmitFeatures = null;
 		logInputInfo();
 		if (useStackedFeatures) {
 			Collection<Pair<List<String>, List<String>>> stackedSequences
-			= TabSeparatedFileReader.readPOSSeqences(stackedFile, 
+			= TabSeparatedFileReader.readPOSSequences(stackedFile, 
 					numLabeledSentences, 
 					maxSentenceLength);			
 			pairList = POSUtil.getObservationsAndGoldLabels(
@@ -1877,7 +1889,7 @@ String[] tabSeparatedEmitFeatures = null;
 		logInputInfo();
 		if (useStackedFeatures) {
 			Collection<Pair<List<String>, List<String>>> stackedSequences
-			= TabSeparatedFileReader.readPOSSeqences(stackedFile, 
+			= TabSeparatedFileReader.readPOSSequences(stackedFile, 
 					numLabeledSentences, 
 					maxSentenceLength);			
 			pairList = POSUtil.getObservationsAndGoldLabels(
@@ -1896,15 +1908,27 @@ String[] tabSeparatedEmitFeatures = null;
 		}
 		List<TransFeatureTemplate> transFeatures = 
 			POSFeatureTemplates.getTransFeatures(useBiasFeature);
-		List<EmitFeatureTemplate> emitFeatures = 
-			POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
+		List<EmitFeatureTemplate> emitFeatures;
+		if (testSet!=null) {
+			emitFeatures = POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
 					lengthNGramSuffixFeature,
 					useTagDictionary, wordToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
 					distSimTable,
-					namesArray);	
+					namesArray);
+		} else {
+			emitFeatures = POSFeatureTemplates.getEmitFeaturesLoaded(useStandardFeatures, 
+					lengthNGramSuffixFeature,
+					useTagDictionary, wordToIndex, 
+					tagDictionary,
+					tagsToClusters,
+					noahsFeatures,
+					distSimTable,
+					namesArray,
+					true);
+		}
 		FileWriter curveOut = null;
 		try {
 			curveOut = new FileWriter(execPoolDir + "/" + "curve");

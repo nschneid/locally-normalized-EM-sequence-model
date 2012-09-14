@@ -17,12 +17,12 @@ public class VMeasure {
 		String goldFile = args[0];
 		String autoFile = args[1];
 		Collection<Pair<List<String>, List<String>>>  gSequences =
-			TabSeparatedFileReader.readPOSSeqences(goldFile, 
+			TabSeparatedFileReader.readPOSSequences(goldFile, 
 					Integer.MAX_VALUE, 
 					Integer.MAX_VALUE);
 
 		Collection<Pair<List<String>, List<String>>>  aSequences =
-			TabSeparatedFileReader.readPOSSeqences(autoFile, 
+			TabSeparatedFileReader.readPOSSequences(autoFile, 
 					Integer.MAX_VALUE, 
 					Integer.MAX_VALUE);
 		ArrayList<String> indexToPOSGold = new ArrayList<String>();

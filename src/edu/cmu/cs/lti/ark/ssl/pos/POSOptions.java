@@ -22,8 +22,11 @@ public class POSOptions {
 	@Option(gloss = "Whether to use unlabeled data")
 	public CmdLineParser.Option useUnlabeledData;
 	
-	@Option(gloss = "Tagged sentences for test")
-	public CmdLineParser.Option testSet;	
+	@Option(gloss = "Sentences for test (tagged tokens)")
+	public CmdLineParser.Option testSet;
+	
+	@Option(gloss = "Sentences for test (features and tags)")
+	public CmdLineParser.Option testFeatureFile;
 		
 	@Option(gloss = "Tagged sentences for test")
 	public CmdLineParser.Option trainOrTest;	
@@ -167,6 +170,7 @@ public class POSOptions {
 		unlabeledFeatureFile = parser.addStringOption("unlabeledFeatureFile");
 		useUnlabeledData = parser.addBooleanOption("useUnlabeledData");
 		testSet = parser.addStringOption("testSet");
+		testFeatureFile = parser.addStringOption("testFeatureFile");
 		trainOrTest = parser.addStringOption("trainOrTest");
 		modelFile = parser.addStringOption("modelFile");
 		runOutput = parser.addStringOption("runOutput");

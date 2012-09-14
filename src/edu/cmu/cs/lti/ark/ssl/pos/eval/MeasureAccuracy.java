@@ -43,17 +43,17 @@ public class MeasureAccuracy {
 										   String woLPCorpus,
 										   String wLPCorpus) {
 		Collection<Pair<List<String>, List<String>>>  gSequences =
-			TabSeparatedFileReader.readPOSSeqences(goldCorpus, 
+			TabSeparatedFileReader.readPOSSequences(goldCorpus, 
 					Integer.MAX_VALUE, 
 					200);
 		
 		Collection<Pair<List<String>, List<String>>>  woSequences =
-			TabSeparatedFileReader.readPOSSeqences(woLPCorpus, 
+			TabSeparatedFileReader.readPOSSequences(woLPCorpus, 
 					Integer.MAX_VALUE, 
 					200);
 		
 		Collection<Pair<List<String>, List<String>>>  wSequences =
-			TabSeparatedFileReader.readPOSSeqences(wLPCorpus, 
+			TabSeparatedFileReader.readPOSSequences(wLPCorpus, 
 					Integer.MAX_VALUE, 
 					200);
 		signTestSentenceLevel(gSequences, woSequences, wSequences, "../sigtests/" + language + "-wolp-sl", "../sigtests/" + language + "-wlp-sl");
@@ -61,12 +61,12 @@ public class MeasureAccuracy {
 	
 	public static double getAccuracy(String testGoldCorpus, String testCorpus) {
 		Collection<Pair<List<String>, List<String>>>  gSequences =
-			TabSeparatedFileReader.readPOSSeqences(testGoldCorpus, 
+			TabSeparatedFileReader.readPOSSequences(testGoldCorpus, 
 					Integer.MAX_VALUE, 
 					200);
 		
 		Collection<Pair<List<String>, List<String>>>  aSequences =
-			TabSeparatedFileReader.readPOSSeqences(testCorpus, 
+			TabSeparatedFileReader.readPOSSequences(testCorpus, 
 					Integer.MAX_VALUE, 
 					200);
 		Iterator<Pair<List<String>, List<String>>> aItr = 

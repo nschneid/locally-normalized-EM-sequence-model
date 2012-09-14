@@ -14,7 +14,7 @@ public class ConvertTreebanks {
 		String inFile = args[0];
 		String outFile = args[1];
 		Collection<Pair<List<String>, List<String>>> col = 
-			 TabSeparatedFileReader.readPOSSeqences(inFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
+			 TabSeparatedFileReader.readPOSSequences(inFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
 		Iterator<Pair<List<String>, List<String>>> it = 
 			col.iterator();	 
 		BufferedWriter bWriter = BasicFileIO.openFileToWrite(outFile);

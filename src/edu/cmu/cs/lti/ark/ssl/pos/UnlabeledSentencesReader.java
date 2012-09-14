@@ -99,11 +99,11 @@ public class UnlabeledSentencesReader {
 						if (seq.size()>0) {
 							sequences.add(seq);
 							nSeqs++;
+							seq = new ArrayList<String>();
+							
 							if (nSeqs >= numSequences) {
 								break;
 							}
-							
-							seq = new ArrayList<String>();
 						}
 						continue;
 					}
@@ -114,7 +114,7 @@ public class UnlabeledSentencesReader {
 					}
 				}
 				
-				if (seq.size()>0) {
+				if (seq.size()>0 && seq.size()<=maxSequenceLength) {
 					sequences.add(seq);
 					nSeqs++;
 				}

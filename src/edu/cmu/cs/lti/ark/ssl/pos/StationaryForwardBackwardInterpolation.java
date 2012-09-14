@@ -75,7 +75,7 @@ public class StationaryForwardBackwardInterpolation {
 	}
 
 	public void setInput(StationarySequenceInstance seqInstance, boolean viterbi) {
-		assert seqInstance.getSequenceLength() < seqModel.getMaximumSequenceLength();
+		assert seqInstance.getSequenceLength() <= seqModel.getMaximumSequenceLength();
 		this.obsLength = seqInstance.getSequenceLength();
 		this.normConstant = 0.0;
 

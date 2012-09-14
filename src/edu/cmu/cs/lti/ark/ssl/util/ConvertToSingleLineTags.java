@@ -56,7 +56,7 @@ public class ConvertToSingleLineTags {
 	
 	public static void treebanks(String[] args) {
 		Collection<Pair<List<String>, List<String>>>  gSequences =
-			TabSeparatedFileReader.readPOSSeqences(args[0], 
+			TabSeparatedFileReader.readPOSSequences(args[0], 
 					Integer.MAX_VALUE, 
 					Integer.MAX_VALUE);
 		BufferedWriter bWriter = BasicFileIO.openFileToWrite(args[1]);

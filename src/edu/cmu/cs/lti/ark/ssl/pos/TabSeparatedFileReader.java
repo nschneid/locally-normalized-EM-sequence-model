@@ -15,7 +15,7 @@ public class TabSeparatedFileReader {
 	private static Logger log = Logger.getLogger(TabSeparatedFileReader.class.getCanonicalName());
 	
 	public static Collection<Pair<List<String>, List<String>>> 
-	readPOSSeqences(String path, 
+	readPOSSequences(String path, 
 			int numSequences, 
 			int maxSequenceLength) {
 		Collection<Pair<List<String>, List<String>>> sequences = 
@@ -36,6 +36,30 @@ public class TabSeparatedFileReader {
 			}
 			sequences.add(sequence);
 		}
+		return sequences;
+	}
+	
+	public static Collection<Pair<List<String>, List<String>>> 
+	readPOSFeatSequences(String path, 
+			int numSequences, 
+			int maxSequenceLength) {
+		Collection<Pair<List<String>, List<String>>> sequences = 
+				new ArrayList<Pair<List<String>,List<String>>>();
+		
+		int nSeq = 0;
+		for (List<String> seq : UnlabeledSentencesReader.readSequencesOneTokenPerLine(path, numSequences, maxSequenceLength)) {
+			List<String> observations = new ArrayList<String>();
+			List<String> labels = new ArrayList<String>();
+			for (String tokFeats : seq) {
+				String lbl = tokFeats.substring(tokFeats.lastIndexOf('\t'));	// last column holds the label
+				tokFeats = tokFeats.substring(0,tokFeats.lastIndexOf('\t'));
+				observations.add(tokFeats);
+				labels.add(lbl);
+			}
+			sequences.add(Pair.makePair(observations, labels));
+			nSeq++;
+		}
+		
 		return sequences;
 	}
 

@@ -45,15 +45,15 @@ public class ConvertTBToUPos {
 						
 			
 			Collection<Pair<List<String>, List<String>>> goldCol = 
-				TabSeparatedFileReader.readPOSSeqences(goldPOSSet, 400000, 10);
+				TabSeparatedFileReader.readPOSSequences(goldPOSSet, 400000, 10);
 			Collection<Pair<List<String>, List<String>>> testGoldCol = 
-				TabSeparatedFileReader.readPOSSeqences(testGoldPOSSet, 400000, 10);
+				TabSeparatedFileReader.readPOSSequences(testGoldPOSSet, 400000, 10);
 			goldCol.addAll(testGoldCol);			
 			
 			Collection<Pair<List<String>, List<String>>> autoCol = 
-				TabSeparatedFileReader.readPOSSeqences(autoPOSSet, 400000, 10);
+				TabSeparatedFileReader.readPOSSequences(autoPOSSet, 400000, 10);
 			Collection<Pair<List<String>, List<String>>> testAutoCol = 
-				TabSeparatedFileReader.readPOSSeqences(testAutoPOSSet, 400000, 10);
+				TabSeparatedFileReader.readPOSSequences(testAutoPOSSet, 400000, 10);
 			autoCol.addAll(testAutoCol);		
 			
 			Collection<List<String>> deps = readDeps(treebank, testTreebank, 400000, 10);

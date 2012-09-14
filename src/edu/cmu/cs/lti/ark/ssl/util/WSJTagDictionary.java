@@ -24,7 +24,7 @@ public class WSJTagDictionary {
 		for (String file: files) {
 			String inFile = root + "/" + file;
 			Collection<Pair<List<String>, List<String>>> 
-			 sequences = TabSeparatedFileReader.readPOSSeqences(inFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
+			 sequences = TabSeparatedFileReader.readPOSSequences(inFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
 			for (Pair<List<String>, List<String>> seq: sequences) {
 				List<String> words = seq.getFirst();
 				List<String> pos = seq.getSecond();

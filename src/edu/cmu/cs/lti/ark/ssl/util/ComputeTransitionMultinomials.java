@@ -41,7 +41,7 @@ public class ComputeTransitionMultinomials {
 			}
 		}
 		Collection<Pair<List<String>, List<String>>> data = 
-			TabSeparatedFileReader.readPOSSeqences(trainFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
+			TabSeparatedFileReader.readPOSSequences(trainFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
 		Iterator<Pair<List<String>, List<String>>> itr = data.iterator();
 		while (itr.hasNext()) {
 			Pair<List<String>, List<String>> dp = itr.next();
