@@ -51,7 +51,7 @@ public class TabSeparatedFileReader {
 			List<String> observations = new ArrayList<String>();
 			List<String> labels = new ArrayList<String>();
 			for (String tokFeats : seq) {
-				String lbl = tokFeats.substring(tokFeats.lastIndexOf('\t'));	// last column holds the label
+				String lbl = tokFeats.substring(tokFeats.lastIndexOf('\t')+1);	// last column holds the label
 				tokFeats = tokFeats.substring(0,tokFeats.lastIndexOf('\t'));
 				observations.add(tokFeats);
 				labels.add(lbl);
@@ -72,7 +72,7 @@ public class TabSeparatedFileReader {
 			return null;
 		}
 		line = line.trim();
-		while (!line.equals("") && line != null) {
+		while (line != null && !line.equals("")) {
 			String[] toks = getToks(line);
 			if (toks.length != 2) {
 				log.severe("Problem with line:" + line);
