@@ -10,6 +10,13 @@ public class POSOptions {
 	private static Logger log = Logger.getLogger(SemiSupervisedPOSTagger.class.getCanonicalName());
 	
 	public CmdLineParser parser;
+	
+	@Option(gloss = "File listing all possible tag labels (optional unless they are BIO labels)")
+	public CmdLineParser.Option labelsFile;
+	
+	@Option(gloss = "Whether the tagger is a BIO chunker (if so, labels must be provided in a file; the first label should be O, and subsequent ones starting alternately with B and I)")
+	public CmdLineParser.Option bio;
+	
 	@Option(gloss = "Tagged sentences for training")
 	public CmdLineParser.Option trainSet;
 	
@@ -165,6 +172,8 @@ public class POSOptions {
 	
 	public POSOptions(String[] args) {
 		parser = new CmdLineParser();
+		labelsFile = parser.addStringOption("labelsFile");
+		bio = parser.addBooleanOption("bio");
 		trainSet = parser.addStringOption("trainSet");
 		unlabeledSet = parser.addStringOption("unlabeledSet");
 		unlabeledFeatureFile = parser.addStringOption("unlabeledFeatureFile");

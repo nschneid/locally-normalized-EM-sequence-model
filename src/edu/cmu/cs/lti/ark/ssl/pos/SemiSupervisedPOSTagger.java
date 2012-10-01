@@ -81,6 +81,8 @@ public class SemiSupervisedPOSTagger {
 	/**
 	 * Various input options
 	 */
+	private String labelsFile;
+	private boolean isBIO;
 	private String trainSet;
 	private String unlabeledSet;
 	private String unlabeledFeatureFile;
@@ -206,6 +208,38 @@ public class SemiSupervisedPOSTagger {
 		return dir.delete(); 
 	} 
 
+	private void readLabelsFile() {
+		assert indexToPOS.size()==0 && posToIndex.size()==0;
+		BufferedReader bReader = BasicFileIO.openFileToRead(labelsFile);
+		
+		// first line
+		String line = BasicFileIO.getLine(bReader).trim();
+		if (isBIO && !line.equals("O")) {
+			System.err.println("Invalid BIO labels file: first label ('"+line+"') must be 'O'");
+			System.exit(1);
+		}
+		posToIndex.put(line, indexToPOS.size());
+		indexToPOS.add(line);
+
+		// subsequent lines
+		while ((line = BasicFileIO.getLine(bReader).trim()) != null) {
+			if (isBIO) {
+				if (indexToPOS.size()%2==1 && line.charAt(0)!='B') {	// should be a B label
+					System.err.println("Invalid BIO labels file: '"+line+"' not a B label");
+					System.exit(1);
+				}
+				else if (line.charAt(0)!='I' || !line.substring(1).equals(indexToPOS.get(indexToPOS.size()-1).substring(1))) {	// should be an I label
+					System.err.println("Invalid BIO labels file: '"+line+"' not an I label matching the previous label");
+					System.exit(1);
+				}
+			}
+			posToIndex.put(line, indexToPOS.size());
+			indexToPOS.add(line);
+		}
+		
+		assert indexToPOS.size()==posToIndex.size();	// otherwise, duplicate label in the file
+		BasicFileIO.closeFileAlreadyRead(bReader);
+	}
 
 	private void readTagDictionary() {
 		BufferedReader bReader = BasicFileIO.openFileToRead(tagDictionaryFile);
@@ -238,6 +272,14 @@ public class SemiSupervisedPOSTagger {
 	}
 
 	private void setVariousOptions() {
+		labelsFile = (String) parser.getOptionValue(options.labelsFile);
+		isBIO = (Boolean) parser.getOptionValue(options.bio) == null ? false : true;
+		if (isBIO && labelsFile==null) {
+			System.err.println("If --bio is enabled, --labelsFile is required");
+			System.exit(1);
+		}
+		readLabelsFile();	// do before call to readTagDictionary()
+		
 		trainOrTest = (String) parser.getOptionValue(options.trainOrTest);
 		if (trainOrTest.equals("train")) {
 			trainSet = (String) parser.getOptionValue(options.trainSet);

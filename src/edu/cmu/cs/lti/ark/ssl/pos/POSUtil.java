@@ -29,7 +29,7 @@ public class POSUtil {
 			ArrayList<String> indexToWord,
 			Map<String, Integer> wordToIndex,
 			ArrayList<String> indexToPOS,
-			Map<String, Integer> posToIndex
+			Map<String, Integer> posToIndex, boolean frozenLabels
 			) {
 		int[][] observations = new int[sequences.size()][];
 		int[][] goldLabels = new int[sequences.size()][];
@@ -41,7 +41,7 @@ public class POSUtil {
 			}
 			goldLabels[i] = new int[sequence.getSecond().size()];
 			for (int j=0; j<sequence.getSecond().size(); ++j) {
-				goldLabels[i][j] = indexString(sequence.getSecond().get(j), indexToPOS, posToIndex);
+				goldLabels[i][j] = (frozenLabels) ? posToIndex.get(sequence.getSecond().get(j)) : indexString(sequence.getSecond().get(j), indexToPOS, posToIndex);
 			}
 			++i;
 		}
