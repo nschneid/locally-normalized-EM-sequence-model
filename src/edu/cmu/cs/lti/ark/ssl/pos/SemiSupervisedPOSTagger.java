@@ -248,7 +248,10 @@ public class SemiSupervisedPOSTagger {
 					(String) parser.getOptionValue(options.unlabeledSet);
 				unlabeledFeatureFile = 
 					(String) parser.getOptionValue(options.unlabeledFeatureFile);
-				assert (unlabeledSet==null) ^ (unlabeledFeatureFile==null);
+				if (!((unlabeledSet==null) ^ (unlabeledFeatureFile==null))) {
+					System.err.println("Should have exactly one of: --unlabeledSet or --unlabeledFeatureFile");
+					System.exit(1);
+				}
 				numUnLabeledSentences =
 					(Integer) parser.getOptionValue(options.numUnLabeledSentences);
 				useSameSetOfFeatures = parser.getOptionValue(options.useSameSetOfFeatures)
@@ -284,7 +287,10 @@ public class SemiSupervisedPOSTagger {
 						(String) parser.getOptionValue(options.unlabeledSet);
 					unlabeledFeatureFile = 
 							(String) parser.getOptionValue(options.unlabeledFeatureFile);
-					assert (unlabeledSet==null) ^ (unlabeledFeatureFile==null);
+					if (!((unlabeledSet==null) ^ (unlabeledFeatureFile==null))) {
+						System.err.println("Should have exactly one of: --unlabeledSet or --unlabeledFeatureFile");
+						System.exit(1);
+					}
 					numUnLabeledSentences =
 						(Integer) parser.getOptionValue(options.numUnLabeledSentences);
 					useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
@@ -300,7 +306,10 @@ public class SemiSupervisedPOSTagger {
 		} else {
 			testSet = (String) parser.getOptionValue(options.testSet);
 			testFeatureFile = (String) parser.getOptionValue(options.testFeatureFile);
-			assert (testSet==null) ^ (testFeatureFile==null);
+			if (!((testSet==null) ^ (testFeatureFile==null))) {
+				System.err.println("Should have exactly one of: --testSet or --testFeatureFile");
+				System.exit(1);
+			}
 		}
 		modelFile = (String) parser.getOptionValue(options.modelFile);
 		runOutput = (String) parser.getOptionValue(options.runOutput);
