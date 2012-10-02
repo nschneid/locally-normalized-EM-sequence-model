@@ -196,7 +196,6 @@ public class POSFeatureTemplates {
 				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
-					System.out.println("WTF");
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
 				}
 			}
@@ -238,7 +237,11 @@ public class POSFeatureTemplates {
 			// removing this gives me tiny regression 0.8777777777777778 => 0.8767295597484277
 			if (numCap >= 1 && caplabel!=null) {
 				String lowered = word.toLowerCase();
-				features.add(Pair.makePair(String.format("downcase|%s|%s|%d", lowered, caplabel, label), 1.0));
+				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+					features.add(Pair.makePair(String.format("downcase|%s|%s|%d", lowered, caplabel, label), 1.0));
+				} else {
+					features.add(Pair.makePair(String.format("downcase|%s|%s|%d", lowered, caplabel, label), Double.NEGATIVE_INFINITY));
+				}
 			}
 			return features;
 		}
@@ -775,7 +778,7 @@ public class POSFeatureTemplates {
 	}
 	
 public static boolean lowercaseTypes = false;
-public static boolean constrainTagsByPOSSuffix = true;
+public static boolean constrainTagsByPOSSuffix = false;
 	
 	public static boolean isEmissionValid(boolean useTagDictionary, 
 			String observation, 
@@ -787,11 +790,13 @@ public static boolean constrainTagsByPOSSuffix = true;
 			return true;
 		}
 		
-		String word = observation.split("\t")[0];
+		String word = observation;	//.split("\t")[0];
 		
 		if (lowercaseTypes)
 			word = word.toLowerCase();
-		
+		if (!wordToIndex.containsKey(word)) {
+			return true;
+		}
 		int index = wordToIndex.get(word);
 		if (index >= tagDictionary.length) {
 			// word not in dictionary

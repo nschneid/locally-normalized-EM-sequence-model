@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -208,16 +209,23 @@ public class SemiSupervisedPOSTagger {
 
 
 	private void readTagDictionary() {
+		// this is called AFTER loading the training data
+		
 		BufferedReader bReader = BasicFileIO.openFileToRead(tagDictionaryFile);
-		String line = BasicFileIO.getLine(bReader);
+		String line;
 		Map<Integer, int[]> tempDict = new HashMap<Integer, int[]>();
-		while (line != null) {
-			line = line.trim();
-			String[] tabSeparatedToks = line.split("\t");
-			String word = tabSeparatedToks[0];
-			String[] tags = TabSeparatedFileReader.getToks(tabSeparatedToks[1]);
+		Set<String> setOfTags = new HashSet<String>();
+		while ((line = BasicFileIO.getLine(bReader)) != null) {
+			line = line.trim();	// line is of the form: OBSERVED...\tTAG1 TAG2 TAG3
+			int iTags = line.lastIndexOf("\t");
+			String word = line.substring(0,iTags);
+			String[] tags = TabSeparatedFileReader.getToks(line.substring(iTags));
+			for (String tag : tags) {
+				setOfTags.add(tag);
+			}
+			
+			// index the strings
 			int wordIndex = POSUtil.indexString(word, indexToWord, wordToIndex);
-			line = BasicFileIO.getLine(bReader);
 			int[] intTags = new int[tags.length];
 			for (int i = 0; i < intTags.length; i++) {
 				intTags[i] = POSUtil.indexString(tags[i], indexToPOS, posToIndex);
@@ -226,14 +234,45 @@ public class SemiSupervisedPOSTagger {
 			tempDict.put(wordIndex, intTags);
 		}
 		BasicFileIO.closeFileAlreadyRead(bReader);
+		
+		// create the dictionary over indexed strings
 		int wordSize = indexToWord.size();
-		int[][] tagDict = new int[wordSize][];
-		for (int i = 0; i < tagDict.length; i ++) {
-			if (!tempDict.containsKey(i)) {
-				tagDict[i] = null;
+		tagDictionary = new int[wordSize][];
+		for (int i = 0; i < tagDictionary.length; i++) {
+			if (!tempDict.containsKey(i)) {	// token seen in the training data that is not in the dictionary
+				tagDictionary[i] = null;
 			} else {
-				tagDict[i] = tempDict.get(i);
+				tagDictionary[i] = tempDict.get(i);
 			}
+		}
+
+		if (this.numTags != setOfTags.size()) {
+			System.err.println("Problem: mismatch between number of unsupervised clusters/tags seen in data (" + this.numTags + ") vs. tag dictionary (" + setOfTags.size() + ")");
+			System.exit(1);
+		}
+		
+		// use the real tag index as the one and only cluster mapped to that tag
+		int posSize = indexToPOS.size();
+		tagsToClusters = new int[posSize][];
+		for (int i = 0; i < posSize; i++) {
+			tagsToClusters[i] = new int[1];
+			tagsToClusters[i][0] = i;
+		}
+		
+		// rewriting init transitions file
+		if (initTransitionsFile != null) {
+			System.err.println("--initTransitionsFile with tagging dictionary not supported yet");
+			System.exit(1);
+			//System.out.println("Reading transition probabilities in the tag dictionary setting...");
+			//initTransProbs = readDictionaryBasedTransitionsFile(initTransitionsFile);
+		}
+		// reading helper transitions files
+		if (useInterpolation) {
+			System.err.println("--useInterpolation with tagging dictionary not supported yet");
+			System.exit(1);
+			//System.out.println("Getting helper transitions using dictionary tags..");
+			//String[] paths = pathToHelperTransitions.split(",");
+			//getHelperTransitionsTagDict(paths);
 		}
 	}
 
@@ -266,11 +305,8 @@ public class SemiSupervisedPOSTagger {
 				gamma = (Double) parser.getOptionValue(options.gamma);
 				useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
 				== null ? false : true;
-				if (useTagDictionary) { // not supported yet
+				if (useTagDictionary) {
 					tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-					readTagDictionary();
-					clusterToTagMappingFile = (String) parser.getOptionValue(options.clusterToTagMappingFile);
-					readClusterToTagMappingFile();
 				}
 			} else {
 				useOnlyUnlabeledData = parser.getOptionValue(options.useOnlyUnlabeledData) 
@@ -295,11 +331,8 @@ public class SemiSupervisedPOSTagger {
 						(Integer) parser.getOptionValue(options.numUnLabeledSentences);
 					useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
 					== null ? false : true;
-					if (useTagDictionary) { // not supported yet
+					if (useTagDictionary) {
 						tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-						readTagDictionary();
-						clusterToTagMappingFile = (String) parser.getOptionValue(options.clusterToTagMappingFile);
-						readClusterToTagMappingFile();
 					}
 				}
 			}
@@ -309,6 +342,11 @@ public class SemiSupervisedPOSTagger {
 			if (!((testSet==null) ^ (testFeatureFile==null))) {
 				System.err.println("Should have exactly one of: --testSet or --testFeatureFile");
 				System.exit(1);
+			}
+			useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
+					== null ? false : true;
+			if (useTagDictionary) {
+				tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
 			}
 		}
 		modelFile = (String) parser.getOptionValue(options.modelFile);
@@ -412,7 +450,7 @@ public class SemiSupervisedPOSTagger {
 		}
 		initTransitionsFile = (String) parser.getOptionValue(options.initTransitionsFile);
 		System.out.println("File with initial transition probs:" + initTransitionsFile);
-		if (initTransitionsFile != null && !initTransitionsFile.equals("null")) {
+		if (initTransitionsFile != null && !initTransitionsFile.equals("null") && !useTagDictionary) {
 			initTransProbs = getInitTransProbs(initTransitionsFile);
 		} else {
 			initTransProbs = null;
@@ -441,7 +479,7 @@ public class SemiSupervisedPOSTagger {
 			fineToCoarseMapFile = (String) parser.getOptionValue(options.fineToCoarseMapFile);
 			String[] paths = pathToHelperTransitions.split(",");
 			numHelperLanguages = paths.length;
-			getHelperTransitions(paths);
+			if (!useTagDictionary) getHelperTransitions(paths);
 		}
 	}	
 
@@ -1013,9 +1051,14 @@ public class SemiSupervisedPOSTagger {
 					log.severe("Number of tags is zero. Exiting.");
 					System.exit(-1);
 				} else {
-					for (int i = 0; i < numTags; i++) {
-						indexToPOS.add("T"+i);
-						posToIndex.put("T"+i, i);
+					if (useTagDictionary) {
+						System.err.println("Reading tag dictionary...");
+						readTagDictionary();
+					} else {
+						for (int i = 0; i < numTags; i++) {
+							indexToPOS.add("T"+i);
+							posToIndex.put("T"+i, i);
+						}
 					}
 				}
 			} else {
@@ -1728,6 +1771,14 @@ String[] tabSeparatedEmitFeatures = null;
 				wordToIndex, 
 				indexToPOS, 
 				posToIndex);
+		
+		System.out.println("Use tag dictionary..." + useTagDictionary);
+		numTags = indexToPOS.size();
+		if (useTagDictionary) {
+			System.out.println("Reading tag dictionary...");
+			readTagDictionary();
+		}
+		
 		lObservations = pairList.getFirst();
 		goldLabels = pairList.getSecond();
 		logObservationInfo();
