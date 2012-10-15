@@ -278,7 +278,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 		}
 
 		//TODO: correct for any changes to the regularization term due to zeroing out of regularization weights above?
-		negativeRegularizedLogMarginalLikelihood += calculateRegularizer()-reg0;
+		//negativeRegularizedLogMarginalLikelihood += calculateRegularizer()-reg0;
 		//computePotentials();
 		//forwardBackward.compute();
 /*		if (-calculateRegularizedLogMarginalLikelihood()!=negativeRegularizedLogMarginalLikelihood) {
