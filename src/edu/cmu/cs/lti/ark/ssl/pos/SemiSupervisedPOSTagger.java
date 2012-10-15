@@ -821,14 +821,14 @@ public class SemiSupervisedPOSTagger {
 
 
 	public List<Pair<Integer,Double>>[][] getActiveEmitFeatures(List<EmitFeatureTemplate> templates, 
-			int numObservationTypes, int numLabels, int startLabel, int stopLabel, String[] featS) {
+			int numObservationTypes, int numLabels, int startLabel, int stopLabel) {
 		List<Pair<Integer,Double>>[][] activeFeatures = new List[numLabels][numObservationTypes];
 		for (int s=0; s<numLabels; ++s) {
 			if (s != startLabel && s != stopLabel) {
 				for (int i=0; i<numObservationTypes; ++i) {
 					activeFeatures[s][i] = new ArrayList<Pair<Integer,Double>>();
 					for (EmitFeatureTemplate template : templates) {
-						List<Pair<String, Double>> features = template.getFeatures(s, ((featS!=null) ? featS[i] : indexToWord.get(i)));
+						List<Pair<String, Double>> features = template.getFeatures(s, indexToWord.get(i));
 						for (Pair<String, Double> feature : features) {
 							int index = POSUtil.indexString(feature.getFirst(), 
 									indexToFeature, featureToIndex);
@@ -1150,18 +1150,17 @@ public class SemiSupervisedPOSTagger {
 
 		int numLabels = indexToPOS.size();
 
-String[] tabSeparatedEmitFeatures = null;
 		// checking if we are using only unlabeled data
 		if (useOnlyUnlabeledData) {
 			if (!useInterpolation) {
 				trainUnsupervisedFeatureHMM(numLabels,
 						transFeatures,
-						emitFeatures, tabSeparatedEmitFeatures, 
+						emitFeatures,
 						curveOut);
 			} else {
 				trainUnsupervisedFeatureHMMInterpolation(numLabels,
 						interpolationFeature,
-						emitFeatures, tabSeparatedEmitFeatures, 
+						emitFeatures,
 						curveOut);
 			}
 		} else if (!useUnlabeledData) { // a supervised model
@@ -1169,12 +1168,12 @@ String[] tabSeparatedEmitFeatures = null;
 				if (!trainHMMDiscriminatively)  {
 					trainSupervisedFeatureHMM(numLabels, 
 							transFeatures,
-							emitFeatures, tabSeparatedEmitFeatures, 
+							emitFeatures,
 							curveOut);
 				} else {
 					trainSupervisedFeatureHMMDiscriminatively(numLabels, 
 							transFeatures,
-							emitFeatures, tabSeparatedEmitFeatures, 
+							emitFeatures,
 							curveOut);
 				}
 			} else {
@@ -1186,7 +1185,7 @@ String[] tabSeparatedEmitFeatures = null;
 		} else { // a model with a discriminative as well as generative objective
 			trainSemiSupervisedModel(numLabels, 
 					transFeatures, 
-					emitFeatures, tabSeparatedEmitFeatures, 
+					emitFeatures,
 					curveOut);
 		}
 	}
@@ -1194,7 +1193,6 @@ String[] tabSeparatedEmitFeatures = null;
 	public void trainSemiSupervisedModel(int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
-			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 
 		int stopLabel = numLabels;
@@ -1220,8 +1218,7 @@ String[] tabSeparatedEmitFeatures = null;
 					indexToWord.size(), 
 					numLabels + 2, 
 					startLabel, 
-					stopLabel,
-					tabSeparatedEmitFeats);		
+					stopLabel);		
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
 				getActiveStackedFeatures(indexToWord.size(), 
@@ -1306,7 +1303,6 @@ String[] tabSeparatedEmitFeatures = null;
 			int numLabels, 
 			InterpolationFeatureTemplate interpolationFeature,
 			List<EmitFeatureTemplate> emitFeatures,
-			String[] tabSeparatedEmitFeatures,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = 
 			new GradientSequenceInterpolatedModel(uObservations,
@@ -1320,7 +1316,7 @@ String[] tabSeparatedEmitFeatures = null;
 					grad.getStartLabel(), 
 					grad.getStopLabel());
 			
-		_h1(emitFeatures, tabSeparatedEmitFeatures, grad);
+		_h1(emitFeatures, grad);
 		
 		double[] regularizationWeights = 
 			getRegularizationWeights();
@@ -1337,14 +1333,13 @@ String[] tabSeparatedEmitFeatures = null;
 	}	
 
 	/** shared helper function to avoid code duplication */
-	private void _h1(List<EmitFeatureTemplate> emitFeatures, String[] tabSeparatedEmitFeatures, GradientSequenceModel grad) {
+	private void _h1(List<EmitFeatureTemplate> emitFeatures, GradientSequenceModel grad) {
 		activeEmitFeatures = 
 				getActiveEmitFeatures(emitFeatures, 
 						grad.getNumObservationTypes(), 
 						grad.getNumLabels(), 
 						grad.getStartLabel(), 
-						grad.getStopLabel(),
-						tabSeparatedEmitFeatures);
+						grad.getStopLabel());
 
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
@@ -1397,7 +1392,6 @@ String[] tabSeparatedEmitFeatures = null;
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
-			String[] tabSeparatedEmitFeatures,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = 
 			new GradientGenSequenceModel(uObservations,
@@ -1411,7 +1405,7 @@ String[] tabSeparatedEmitFeatures = null;
 					grad.getStartLabel(), 
 					grad.getStopLabel());
 		
-		_h1(emitFeatures, tabSeparatedEmitFeatures, grad);
+		_h1(emitFeatures, grad);
 		
 		double[] regularizationWeights = 
 			getRegularizationWeights(transFeatures, emitFeatures);
@@ -1486,7 +1480,6 @@ String[] tabSeparatedEmitFeatures = null;
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
-			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 		int stopLabel = numLabels;
 		int startLabel = numLabels + 1;
@@ -1514,8 +1507,7 @@ String[] tabSeparatedEmitFeatures = null;
 					indexToWord.size(), 
 					numLabels + 2, 
 					startLabel, 
-					stopLabel,
-					tabSeparatedEmitFeats);	
+					stopLabel);	
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
 				getActiveStackedFeatures(indexToWord.size(), 
@@ -1581,7 +1573,6 @@ String[] tabSeparatedEmitFeatures = null;
 			int numLabels, 
 			List<TransFeatureTemplate> transFeatures,
 			List<EmitFeatureTemplate> emitFeatures,
-			String[] tabSeparatedEmitFeats,
 			FileWriter curveOut) {
 		GradientSequenceModel grad = new SupervisedGenSequenceModel(lObservations, goldLabels, 
 				numLabels, indexToWord.size()); 
@@ -1608,8 +1599,7 @@ String[] tabSeparatedEmitFeatures = null;
 					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
-					grad.getStopLabel(),
-					tabSeparatedEmitFeats);
+					grad.getStopLabel());
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
 				getActiveStackedFeatures(grad.getNumObservationTypes(), 
@@ -2014,7 +2004,7 @@ String[] tabSeparatedEmitFeatures = null;
 					grad.getNumObservationTypes(), 
 					grad.getNumLabels(), 
 					grad.getStartLabel(), 
-					grad.getStopLabel(), null);
+					grad.getStopLabel());
 
 		if (useStackedFeatures) {
 			activeStackedFeatures = 
@@ -2069,7 +2059,7 @@ String[] tabSeparatedEmitFeatures = null;
 						"to guess labels:" + goldLabels[i].length + 
 						" " + guessLabels[i].length);
 				System.exit(-1);
-			}			
+			}
 			for (int j = 0; j < goldLabels[i].length; j++) {
 				if (goldLabels[i][j] == guessLabels[i][j]) {
 					correct++;
