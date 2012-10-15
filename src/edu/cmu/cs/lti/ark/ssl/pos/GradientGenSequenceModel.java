@@ -150,6 +150,10 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					emitProbs[l][i] = Math.exp(computeScore(weights, activeEmitFeatures[l][i]));
 					norm += emitProbs[l][i];
 				}
+				if (norm==0.0 || Double.isInfinite(norm) || Double.isNaN(norm)) {
+					System.err.println("something's wrong: norm="+norm);
+					System.exit(1);
+				}
 				for (int i=0; i<numObservations; ++i) {
 					emitProbs[l][i] /= norm;
 				}
@@ -177,7 +181,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 		double score = 0.0;
 		for (int i=0; i<activeFeatures.size(); ++i) {
 			Pair<Integer,Double> feat = activeFeatures.get(i);
-			score += weights[feat.getFirst()] * feat.getSecond();
+			if (feat.getSecond() == Double.NEGATIVE_INFINITY) {
+				score = Double.NEGATIVE_INFINITY;
+			} else {
+				score += weights[feat.getFirst()] * feat.getSecond();
+			}
 		}
 		return score;
 	}
@@ -204,7 +212,9 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 
 		double negativeRegularizedLogMarginalLikelihood = -calculateRegularizedLogMarginalLikelihood();
 		LogInfo.logss("Calc %d log marginal prob: %.2f", numCalculates, -negativeRegularizedLogMarginalLikelihood);
-
+//		double reg0 = calculateRegularizer();
+		
+		
 		// Calculate gradient
 		double[] gradient = new double[weights.length];
 
@@ -215,8 +225,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					if (s1 != startLabel) {
 						for (int f=0; f<activeTransFeatures[s0][s1].size(); ++f) {
 							Pair<Integer,Double> feat = activeTransFeatures[s0][s1].get(f);
-							gradient[feat.getFirst()] -= expectedTransCounts[s0][s1]*feat.getSecond();
-							gradient[feat.getFirst()] -= -expectedLabelCounts[s0]*transProbs[s0][s1]*feat.getSecond();
+							if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+								gradient[feat.getFirst()] -= expectedTransCounts[s0][s1]*feat.getSecond();
+								gradient[feat.getFirst()] -= -expectedLabelCounts[s0]*transProbs[s0][s1]*feat.getSecond();
+							}
+//							else regularizationWeights[feat.getFirst()] = 0;
 						}
 					}
 				}
@@ -229,8 +242,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 				for (int i=0; i<numObservations; ++i) {
 					for (int f=0; f<activeEmitFeatures[s][i].size(); ++f) {
 						Pair<Integer,Double> feat = activeEmitFeatures[s][i].get(f);
-						gradient[feat.getFirst()] -= expectedEmitCounts[s][i]*feat.getSecond();
-						gradient[feat.getFirst()] -= -expectedLabelCounts[s]*emitProbs[s][i]*feat.getSecond();
+						if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+							gradient[feat.getFirst()] -= expectedEmitCounts[s][i]*feat.getSecond();
+							gradient[feat.getFirst()] -= -expectedLabelCounts[s]*emitProbs[s][i]*feat.getSecond();
+						}
+//						else regularizationWeights[feat.getFirst()] = 0;
 					}
 				}
 			}
@@ -245,8 +261,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					for (int i=0; i<numLabels-2; ++i) {
 						for (int f=0; f<activeStackedFeatures[s][i].size(); ++f) {
 							Pair<Integer,Double> feat = activeStackedFeatures[s][i].get(f);
-							gradient[feat.getFirst()] -= expectedStackedEmitCounts[s][i]*feat.getSecond();
-							gradient[feat.getFirst()] -= -expectedLabelCounts[s]*stackedEmitProbs[s][i]*feat.getSecond();
+							if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+								gradient[feat.getFirst()] -= expectedStackedEmitCounts[s][i]*feat.getSecond();
+								gradient[feat.getFirst()] -= -expectedLabelCounts[s]*stackedEmitProbs[s][i]*feat.getSecond();
+							}
+//							else regularizationWeights[feat.getFirst()] = 0;
 						}
 					}
 				}
@@ -258,6 +277,17 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 			gradient[f] -= -2.0*regularizationWeights[f]*(weights[f] - regularizationBiases[f]);
 		}
 
+		//TODO: correct for any changes to the regularization term due to zeroing out of regularization weights above?
+		negativeRegularizedLogMarginalLikelihood += calculateRegularizer()-reg0;
+		//computePotentials();
+		//forwardBackward.compute();
+/*		if (-calculateRegularizedLogMarginalLikelihood()!=negativeRegularizedLogMarginalLikelihood) {
+			System.err.println(negativeRegularizedLogMarginalLikelihood);
+			System.err.println(-calculateRegularizedLogMarginalLikelihood());
+			System.err.println(-calculateRegularizedLogMarginalLikelihood());
+			System.exit(1);
+		}
+*/		
 		++numCalculates;
 		return Pair.makePair(negativeRegularizedLogMarginalLikelihood, gradient);
 	}

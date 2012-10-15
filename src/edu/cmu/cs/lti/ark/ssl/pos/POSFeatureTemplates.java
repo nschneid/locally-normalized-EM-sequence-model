@@ -642,6 +642,10 @@ public class POSFeatureTemplates {
 	public class LoadedFeatures extends BaseEmitFeature {
 		private final boolean positional;
 		
+		public String name = "loaded"; 
+
+		public String getName() {return name;}
+		
 		/** if positional is true, each position in the tab-separated feature list 
 		 * is associated with a different feature name.
 		 * otherwise, treat the list as a bag of features.
@@ -653,13 +657,14 @@ public class POSFeatureTemplates {
 		}
 		public List<Pair<String, Double>> getFeatures(int label, String tabSepFeats) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
+			final double fval = (isEmissionValid(useTagDictionary, tabSepFeats, wordToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
 			
 			int f = 0;
 			for (String fs : tabSepFeats.split("\t")) {
 				if (positional)
-					features.add(Pair.makePair(String.format("feat%d:%s|%d", f, fs, label), 1.0));
+					features.add(Pair.makePair(String.format("feat%d:%s|%d", f, fs, label), fval));
 				else
-					features.add(Pair.makePair(String.format("%s|%d", fs, label), 1.0));
+					features.add(Pair.makePair(String.format("%s|%d", fs, label), fval));
 				f++;
 			}
 			
