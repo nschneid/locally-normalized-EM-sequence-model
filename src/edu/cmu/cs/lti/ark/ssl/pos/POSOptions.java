@@ -125,7 +125,10 @@ public class POSOptions {
 	public CmdLineParser.Option useTagDictionary;	
 		
 	@Option(gloss = "Tag dictionary file")
-	public CmdLineParser.Option tagDictionaryFile;	
+	public CmdLineParser.Option tagDictionaryFile;
+	
+	@Option(gloss = "When the input is a feature file and a tagging dictionary is used, index of the tab-separated field containing the key to be checked against the dictionary (default: 0)")
+	public CmdLineParser.Option tagDictionaryKeyField;
 	
 	@Option(gloss = "Cluster to tag map file")
 	public CmdLineParser.Option clusterToTagMappingFile;	
@@ -204,6 +207,7 @@ public class POSOptions {
 		regParametersModel = parser.addStringOption("regParametersModel");
 		useTagDictionary = parser.addBooleanOption("useTagDictionary");			
 		tagDictionaryFile = parser.addStringOption("tagDictionaryFile");
+		tagDictionaryKeyField = parser.addIntegerOption("tagDictionaryKeyField");
 		clusterToTagMappingFile = parser.addStringOption("clusterToTagMappingFile");
 		trainHMMDiscriminatively = parser.addBooleanOption("trainHMMDiscriminatively");
 		useStackedFeatures = parser.addBooleanOption("useStackedFeatures");

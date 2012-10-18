@@ -125,7 +125,8 @@ public class SemiSupervisedPOSTagger {
 	private String regParametersModelFile;
 	private POSModel regParametersModel;
 	private boolean useTagDictionary;	
-	private String tagDictionaryFile;	
+	private String tagDictionaryFile;
+	private int tagDictionaryKeyField = 0;
 	private String clusterToTagMappingFile;	
 	private int[][] tagsToClusters;
 	private int[][] tagDictionary;
@@ -307,6 +308,8 @@ public class SemiSupervisedPOSTagger {
 				== null ? false : true;
 				if (useTagDictionary) {
 					tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
+					Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
+					if (keyField!=null) tagDictionaryKeyField = keyField;
 				}
 			} else {
 				useOnlyUnlabeledData = parser.getOptionValue(options.useOnlyUnlabeledData) 
@@ -333,6 +336,8 @@ public class SemiSupervisedPOSTagger {
 					== null ? false : true;
 					if (useTagDictionary) {
 						tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
+						Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
+						if (keyField!=null) tagDictionaryKeyField = keyField;
 					}
 				}
 			}
@@ -347,6 +352,8 @@ public class SemiSupervisedPOSTagger {
 					== null ? false : true;
 			if (useTagDictionary) {
 				tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
+				Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
+				if (keyField!=null) tagDictionaryKeyField = keyField;
 			}
 		}
 		modelFile = (String) parser.getOptionValue(options.modelFile);
@@ -1125,7 +1132,8 @@ public class SemiSupervisedPOSTagger {
 					noahsFeatures,
 					distSimTable,
 					namesArray,
-					true);
+					true,
+					tagDictionaryKeyField);
 		}
 		else {
 			emitFeatures = 
@@ -1977,7 +1985,8 @@ public class SemiSupervisedPOSTagger {
 					noahsFeatures,
 					distSimTable,
 					namesArray,
-					true);
+					true,
+					tagDictionaryKeyField);
 		}
 		FileWriter curveOut = null;
 		try {
