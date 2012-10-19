@@ -126,7 +126,7 @@ public class SemiSupervisedPOSTagger {
 	private POSModel regParametersModel;
 	private boolean useTagDictionary;	
 	private String tagDictionaryFile;
-	private int tagDictionaryKeyField = 0;
+	private int[] tagDictionaryKeyFields = new int[1];
 	private String clusterToTagMappingFile;	
 	private int[][] tagsToClusters;
 	private int[][] tagDictionary;
@@ -308,8 +308,13 @@ public class SemiSupervisedPOSTagger {
 				== null ? false : true;
 				if (useTagDictionary) {
 					tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-					Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
-					if (keyField!=null) tagDictionaryKeyField = keyField;
+					String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+					if (keyFields!=null) {
+						String[] fields = keyFields.split(",");
+						tagDictionaryKeyFields = new int[fields.length];
+						for (int i=0; i<fields.length; i++)
+							tagDictionaryKeyFields[i] = Integer.parseInt(fields[i]);
+					}
 				}
 			} else {
 				useOnlyUnlabeledData = parser.getOptionValue(options.useOnlyUnlabeledData) 
@@ -336,8 +341,13 @@ public class SemiSupervisedPOSTagger {
 					== null ? false : true;
 					if (useTagDictionary) {
 						tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-						Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
-						if (keyField!=null) tagDictionaryKeyField = keyField;
+						String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+						if (keyFields!=null) {
+							String[] fields = keyFields.split(",");
+							tagDictionaryKeyFields = new int[fields.length];
+							for (int i=0; i<fields.length; i++)
+								tagDictionaryKeyFields[i] = Integer.parseInt(fields[i]);
+						}
 					}
 				}
 			}
@@ -352,8 +362,13 @@ public class SemiSupervisedPOSTagger {
 					== null ? false : true;
 			if (useTagDictionary) {
 				tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-				Integer keyField = (Integer) parser.getOptionValue(options.tagDictionaryKeyField);
-				if (keyField!=null) tagDictionaryKeyField = keyField;
+				String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+				if (keyFields!=null) {
+					String[] fields = keyFields.split(",");
+					tagDictionaryKeyFields = new int[fields.length];
+					for (int i=0; i<fields.length; i++)
+						tagDictionaryKeyFields[i] = Integer.parseInt(fields[i]);
+				}
 			}
 		}
 		modelFile = (String) parser.getOptionValue(options.modelFile);
@@ -1133,7 +1148,7 @@ public class SemiSupervisedPOSTagger {
 					distSimTable,
 					namesArray,
 					true,
-					tagDictionaryKeyField);
+					tagDictionaryKeyFields);
 		}
 		else {
 			emitFeatures = 
@@ -1986,7 +2001,7 @@ public class SemiSupervisedPOSTagger {
 					distSimTable,
 					namesArray,
 					true,
-					tagDictionaryKeyField);
+					tagDictionaryKeyFields);
 		}
 		FileWriter curveOut = null;
 		try {

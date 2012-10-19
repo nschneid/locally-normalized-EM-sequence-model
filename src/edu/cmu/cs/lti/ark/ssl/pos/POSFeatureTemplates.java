@@ -641,7 +641,7 @@ public class POSFeatureTemplates {
 	/** features loaded from an input file */
 	public class LoadedFeatures extends BaseEmitFeature {
 		private final boolean positional;
-		private final int dictKeyField;
+		private final int[] dictKeyFields;
 		
 		public String name = "loaded"; 
 
@@ -652,16 +652,19 @@ public class POSFeatureTemplates {
 		 * otherwise, treat the list as a bag of features.
 		 */
 		public LoadedFeatures(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0, 
-				boolean positional, int dictKeyField) {
+				boolean positional, int[] dictKeyFields) {
 			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
 			this.positional = positional;
-			this.dictKeyField = dictKeyField;
+			this.dictKeyFields = dictKeyFields;
 		}
 		public List<Pair<String, Double>> getFeatures(int label, String tabSepFeats) {
 			String[] feats = tabSepFeats.split("\t");
 			
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
-			final double fval = (isEmissionValid(useTagDictionary, feats[dictKeyField], wordToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
+			String key = "";
+			for (int f : dictKeyFields)
+				key += "\t"+feats[f];
+			final double fval = (isEmissionValid(useTagDictionary, key.substring(1), wordToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
 			
 			int f = 0;
 			for (String fs : feats) {
@@ -771,13 +774,13 @@ public class POSFeatureTemplates {
 			Map<String, String> noahsFeatures,
 			Map<String, double[]> distSimTable,
 			String[] namesArray, 
-			boolean positional, int dictKeyField) {		
+			boolean positional, int[] dictKeyFields) {		
 		POSFeatureTemplates templates = new POSFeatureTemplates();
 		List<EmitFeatureTemplate> emitFeatures = new ArrayList<EmitFeatureTemplate>();
 		
 		//emitFeatures.add(templates.new EmitIndicatorFeature(uTd, wi, td, tM));
 		
-		emitFeatures.add(templates.new LoadedFeatures(uTd, wi, td, tM, positional, dictKeyField));
+		emitFeatures.add(templates.new LoadedFeatures(uTd, wi, td, tM, positional, dictKeyFields));
 		
 		log.info("Emit features:");
 		for (EmitFeatureTemplate feat : emitFeatures) {
