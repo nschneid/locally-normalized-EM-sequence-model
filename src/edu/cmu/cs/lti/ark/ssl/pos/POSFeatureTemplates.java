@@ -662,8 +662,11 @@ public class POSFeatureTemplates {
 			
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			String key = "";
-			for (int f : dictKeyFields)
+			for (int f : dictKeyFields) {
+				if (f>=feats.length)
+					System.err.println(tabSepFeats);
 				key += "\t"+feats[f];
+			}
 			final double fval = (isEmissionValid(useTagDictionary, key.substring(1), wordToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
 			
 			int f = 0;
