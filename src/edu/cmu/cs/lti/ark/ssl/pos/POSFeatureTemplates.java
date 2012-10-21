@@ -75,17 +75,17 @@ public class POSFeatureTemplates {
 	public class BaseEmitFeature implements EmitFeatureTemplate {
 
 		public boolean useTagDictionary = false;
-		public Map<String, Integer> wordToIndex;
+		public Map<String, Integer> dictKeyToIndex;
 		public int[][] tagDictionary;
 		public int[][] tagMapping;
 
 		public BaseEmitFeature(boolean useTagDictionary0, 
-				Map<String, Integer> wordToIndex0,
+				Map<String, Integer> dictKeyToIndex0,
 				int[][] tagDictionary0,
 				int[][] tagMapping0) {
 			useTagDictionary = useTagDictionary0;
 			if (useTagDictionary) {
-				wordToIndex = wordToIndex0;
+				dictKeyToIndex = dictKeyToIndex0;
 				tagDictionary = tagDictionary0;
 				tagMapping = tagMapping0;
 			}
@@ -105,9 +105,9 @@ public class POSFeatureTemplates {
 	public class EmitIndicatorFeature extends BaseEmitFeature {
 
 		public EmitIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String name = "eind"; 
@@ -116,7 +116,7 @@ public class POSFeatureTemplates {
 
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
-			if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+			if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 				features.add(Pair.makePair(String.format(name+"|%d|%s", label, word), 1.0));
 			} else {
 				features.add(Pair.makePair(String.format(name+"|%d|%s", label, word), Double.NEGATIVE_INFINITY));
@@ -128,9 +128,9 @@ public class POSFeatureTemplates {
 	public class StackedIndicatorFeature extends BaseEmitFeature {
 		
 		public StackedIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String name = "stind"; 
@@ -155,9 +155,9 @@ public class POSFeatureTemplates {
 		private int n;
 
 		public NGramSuffixIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0, 
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, 
 				int[][] tagMapping0, int n0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 			this.n = n0;
 			this.name = "suff"+n0;
 		}
@@ -167,7 +167,7 @@ public class POSFeatureTemplates {
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			if (word.length() >= n) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d|%s",  label, word.substring(word.length()-n, word.length())), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d|%s",  label, word.substring(word.length()-n, word.length())), Double.NEGATIVE_INFINITY));
@@ -183,9 +183,9 @@ public class POSFeatureTemplates {
 		public String name = "initcap"; 
 
 		public InitialCapitalIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -193,7 +193,7 @@ public class POSFeatureTemplates {
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			if (Character.isUpperCase(word.charAt(0))) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -205,8 +205,8 @@ public class POSFeatureTemplates {
 	}
 
 	public class CapitalizationFeatures extends BaseEmitFeature {
-		public CapitalizationFeatures(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+		public CapitalizationFeatures(boolean useTagDictionary0, Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
@@ -237,7 +237,7 @@ public class POSFeatureTemplates {
 			// removing this gives me tiny regression 0.8777777777777778 => 0.8767295597484277
 			if (numCap >= 1 && caplabel!=null) {
 				String lowered = word.toLowerCase();
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format("downcase|%s|%s|%d", lowered, caplabel, label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format("downcase|%s|%s|%d", lowered, caplabel, label), Double.NEGATIVE_INFINITY));
@@ -252,9 +252,9 @@ public class POSFeatureTemplates {
 		public String name = "hyphen"; 
 
 		public ContainsHyphenIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -262,7 +262,7 @@ public class POSFeatureTemplates {
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			if (word.contains("-")) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -277,9 +277,9 @@ public class POSFeatureTemplates {
 		public String name = "digit"; 
 
 		public ContainsDigitIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -293,7 +293,7 @@ public class POSFeatureTemplates {
 				}
 			}
 			if (containsDigit) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -305,8 +305,8 @@ public class POSFeatureTemplates {
 	}
 	
 	public class POSDictFeatures extends BaseEmitFeature {
-		public POSDictFeatures(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+		public POSDictFeatures(boolean useTagDictionary0, Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 		public String getName() { return "pos_dict_features"; }
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
@@ -349,8 +349,8 @@ public class POSFeatureTemplates {
 	};
 
 	public class MetaphoneLexical extends BaseEmitFeature {
-		public MetaphoneLexical(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+		public MetaphoneLexical(boolean useTagDictionary0, Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
@@ -361,8 +361,8 @@ public class POSFeatureTemplates {
 	}
 	
 	public class MetaphonePOSProjection extends BaseEmitFeature {
-		public MetaphonePOSProjection(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+		public MetaphonePOSProjection(boolean useTagDictionary0, Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, int[][] tagMapping0) {
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public List<Pair<String, Double>> getFeatures(int label, String word) {
@@ -395,9 +395,9 @@ public class POSFeatureTemplates {
 		public String name = "atsym"; 
 
 		public StartsWithAtSymbolIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -409,7 +409,7 @@ public class POSFeatureTemplates {
 				atsym = true;
 			}
 			if (atsym) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -423,9 +423,9 @@ public class POSFeatureTemplates {
 		public String name = "hashsym"; 
 
 		public StartsWithHashSymbolIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -437,7 +437,7 @@ public class POSFeatureTemplates {
 				hashsym = true;
 			}
 			if (hashsym) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -451,10 +451,10 @@ public class POSFeatureTemplates {
 		public String name = "noahlex"; 
 		public Map<String, String> nmap;
 		public VariousLexicalAspectsIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0,
 				Map<String, String> noahsFeatures) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 			nmap = noahsFeatures;
 		}
 
@@ -464,7 +464,7 @@ public class POSFeatureTemplates {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			if (nmap.containsKey(word)) {		
 				String feat = nmap.get(word);
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d|%s", label, feat), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d|%s", label, feat), Double.NEGATIVE_INFINITY));
@@ -478,9 +478,9 @@ public class POSFeatureTemplates {
 		public String name = "http";
 
 		public ContainsHTTPIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -492,7 +492,7 @@ public class POSFeatureTemplates {
 				http = true;
 			}
 			if (http) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -506,9 +506,9 @@ public class POSFeatureTemplates {
 		public String name = "RT"; 
 
 		public RTIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 		}
 
 		public String getName() {return name;}
@@ -520,7 +520,7 @@ public class POSFeatureTemplates {
 				http = true;
 			}
 			if (http) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -535,10 +535,10 @@ public class POSFeatureTemplates {
 		public String[] namesArray;
 		
 		public NameIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0,
 				String[] namesArray) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 			this.namesArray = namesArray;
 		}
 
@@ -551,7 +551,7 @@ public class POSFeatureTemplates {
 				isName = true;
 			}
 			if (isName) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					features.add(Pair.makePair(String.format(name+"|%d", label), 1.0));
 				} else {
 					features.add(Pair.makePair(String.format(name+"|%d", label), Double.NEGATIVE_INFINITY));
@@ -567,10 +567,10 @@ public class POSFeatureTemplates {
 		public Map<String, double[]> distSimTable;
 		
 		public DistSimFeature(boolean useTagDictionary0,
-				Map<String, Integer> wordToIndex0, int[][] tagDictionary0,
+				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
 				int[][] tagMapping0,
 				Map<String, double[]> distSimTable) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 			this.distSimTable = distSimTable;
 		}
 
@@ -580,7 +580,7 @@ public class POSFeatureTemplates {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
 			String lcWord = word.toLowerCase();
 			if (distSimTable.containsKey(lcWord)) {
-				if (isEmissionValid(useTagDictionary, word, wordToIndex, tagDictionary, label, tagMapping)) {
+				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
 					double[] arr = distSimTable.get(lcWord);
 					for (int i = 0; i < arr.length; i ++) {
 						features.add(Pair.makePair(String.format(name+"|%d|%d", i, label), arr[i]));
@@ -651,9 +651,9 @@ public class POSFeatureTemplates {
 		 * is associated with a different feature name.
 		 * otherwise, treat the list as a bag of features.
 		 */
-		public LoadedFeatures(boolean useTagDictionary0, Map<String, Integer> wordToIndex0, int[][] tagDictionary0, int[][] tagMapping0, 
+		public LoadedFeatures(boolean useTagDictionary0, Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0, int[][] tagMapping0, 
 				boolean positional, int[] dictKeyFields) {
-			super(useTagDictionary0, wordToIndex0, tagDictionary0, tagMapping0);
+			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
 			this.positional = positional;
 			this.dictKeyFields = dictKeyFields;
 		}
@@ -667,7 +667,7 @@ public class POSFeatureTemplates {
 					System.err.println(tabSepFeats);
 				key += "\t"+feats[f];
 			}
-			final double fval = (isEmissionValid(useTagDictionary, key.substring(1), wordToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
+			final double fval = (isEmissionValid(useTagDictionary, key.substring(1), dictKeyToIndex, tagDictionary, label, tagMapping)) ? 1.0 : Double.NEGATIVE_INFINITY;
 			
 			int f = 0;
 			for (String fs : feats) {
@@ -713,7 +713,7 @@ public class POSFeatureTemplates {
 	public static List<EmitFeatureTemplate> 
 	getEmitFeatures(boolean useStandardFeatures, 
 			int lengthNGramSuffixFeature,
-			boolean uTd, Map<String, Integer> wi, 
+			boolean uTd, Map<String, Integer> dki, 
 			int[][] td,
 			int[][] tM,
 			Map<String, String> noahsFeatures,
@@ -722,42 +722,42 @@ public class POSFeatureTemplates {
 		POSFeatureTemplates templates = new POSFeatureTemplates();
 		List<EmitFeatureTemplate> emitFeatures = new ArrayList<EmitFeatureTemplate>();
 		
-		emitFeatures.add(templates.new EmitIndicatorFeature(uTd, wi, td, tM));
+		emitFeatures.add(templates.new EmitIndicatorFeature(uTd, dki, td, tM));
 		
 		// -templates
 		if (useStandardFeatures) {
 			
 			// Shape / orthographic
-			emitFeatures.add(templates.new InitialCapitalIndicatorFeature(uTd, wi, td, tM));
-			emitFeatures.add(templates.new CapitalizationFeatures(uTd, wi, td, tM));
-			emitFeatures.add(templates.new ContainsHyphenIndicatorFeature(uTd, wi, td, tM));
-			emitFeatures.add(templates.new ContainsDigitIndicatorFeature(uTd, wi, td, tM));
+			emitFeatures.add(templates.new InitialCapitalIndicatorFeature(uTd, dki, td, tM));
+			emitFeatures.add(templates.new CapitalizationFeatures(uTd, dki, td, tM));
+			emitFeatures.add(templates.new ContainsHyphenIndicatorFeature(uTd, dki, td, tM));
+			emitFeatures.add(templates.new ContainsDigitIndicatorFeature(uTd, dki, td, tM));
 			for (int i = 1; i <= lengthNGramSuffixFeature; ++i) {
-				emitFeatures.add(templates.new NGramSuffixIndicatorFeature(uTd, wi, td, tM, i));
+				emitFeatures.add(templates.new NGramSuffixIndicatorFeature(uTd, dki, td, tM, i));
 			}
 			
 			// Twitter specific
-			/* emitFeatures.add(templates.new StartsWithAtSymbolIndicatorFeature(uTd, wi, td, tM));
-			emitFeatures.add(templates.new StartsWithHashSymbolIndicatorFeature(uTd, wi, td, tM));
-			emitFeatures.add(templates.new ContainsHTTPIndicatorFeature(uTd, wi, td, tM));
-			emitFeatures.add(templates.new RTIndicatorFeature(uTd, wi, td, tM));
+			/* emitFeatures.add(templates.new StartsWithAtSymbolIndicatorFeature(uTd, dki, td, tM));
+			emitFeatures.add(templates.new StartsWithHashSymbolIndicatorFeature(uTd, dki, td, tM));
+			emitFeatures.add(templates.new ContainsHTTPIndicatorFeature(uTd, dki, td, tM));
+			emitFeatures.add(templates.new RTIndicatorFeature(uTd, dki, td, tM));
 			
 			// These 3 replace "OldMetaphoneFeatures"
-			emitFeatures.add(templates.new POSDictFeatures(uTd, wi, td, tM));
-			emitFeatures.add(templates.new MetaphoneLexical(uTd, wi, td, tM));
-			emitFeatures.add(templates.new MetaphonePOSProjection(uTd, wi, td, tM));
+			emitFeatures.add(templates.new POSDictFeatures(uTd, dki, td, tM));
+			emitFeatures.add(templates.new MetaphoneLexical(uTd, dki, td, tM));
+			emitFeatures.add(templates.new MetaphonePOSProjection(uTd, dki, td, tM));
 			
 			// names feature
 			if (namesArray != null) {
-				emitFeatures.add(templates.new NameIndicatorFeature(uTd, wi, td, tM, namesArray));
+				emitFeatures.add(templates.new NameIndicatorFeature(uTd, dki, td, tM, namesArray));
 			}
 			
 			// distributional similarity features
 			if (distSimTable != null) {
-				emitFeatures.add(templates.new DistSimFeature(uTd, wi, td, tM, distSimTable));
+				emitFeatures.add(templates.new DistSimFeature(uTd, dki, td, tM, distSimTable));
 			}*/
-//			emitFeatures.add(templates.new OldMetaphoneFeatures(uTd, wi, td, tM));
-//			emitFeatures.add(templates.new VariousLexicalAspectsIndicatorFeature(uTd, wi, td, tM, noahsFeatures));
+//			emitFeatures.add(templates.new OldMetaphoneFeatures(uTd, dki, td, tM));
+//			emitFeatures.add(templates.new VariousLexicalAspectsIndicatorFeature(uTd, dki, td, tM, noahsFeatures));
 			
 		}
 		log.info("Emit features:");
@@ -771,7 +771,7 @@ public class POSFeatureTemplates {
 	public static List<EmitFeatureTemplate> 
 	getEmitFeaturesLoaded(boolean useStandardFeatures, 
 			int lengthNGramSuffixFeature,
-			boolean uTd, Map<String, Integer> wi, 
+			boolean uTd, Map<String, Integer> dki, 
 			int[][] td,
 			int[][] tM,
 			Map<String, String> noahsFeatures,
@@ -781,9 +781,9 @@ public class POSFeatureTemplates {
 		POSFeatureTemplates templates = new POSFeatureTemplates();
 		List<EmitFeatureTemplate> emitFeatures = new ArrayList<EmitFeatureTemplate>();
 		
-		//emitFeatures.add(templates.new EmitIndicatorFeature(uTd, wi, td, tM));
+		//emitFeatures.add(templates.new EmitIndicatorFeature(uTd, dki, td, tM));
 		
-		emitFeatures.add(templates.new LoadedFeatures(uTd, wi, td, tM, positional, dictKeyFields));
+		emitFeatures.add(templates.new LoadedFeatures(uTd, dki, td, tM, positional, dictKeyFields));
 		
 		log.info("Emit features:");
 		for (EmitFeatureTemplate feat : emitFeatures) {
@@ -796,8 +796,8 @@ public static boolean lowercaseTypes = false;
 public static boolean constrainTagsByPOSSuffix = false;
 	
 	public static boolean isEmissionValid(boolean useTagDictionary, 
-			String observation, 
-			Map<String, Integer> wordToIndex, 
+			String dictKey, 
+			Map<String, Integer> dictKeyToIndex, 
 			int[][] tagDictionary,
 			int label,
 			int[][] tagMapping) {
@@ -805,20 +805,18 @@ public static boolean constrainTagsByPOSSuffix = false;
 			return true;
 		}
 		
-		String word = observation;	//.split("\t")[0];
-		
 		if (lowercaseTypes)
-			word = word.toLowerCase();
-		if (!wordToIndex.containsKey(word)) {
+			dictKey = dictKey.toLowerCase();
+		if (!dictKeyToIndex.containsKey(dictKey)) {
 			return true;
 		}
-		int index = wordToIndex.get(word);
+		int index = dictKeyToIndex.get(dictKey);
 		if (index >= tagDictionary.length) {
 			// word not in dictionary
 			if (constrainTagsByPOSSuffix) {
 				// backoff to all tags allowed for the POS
-				final String pos = word.substring(word.lastIndexOf("_"));
-				index = wordToIndex.get(pos);
+				final String pos = dictKey.substring(dictKey.lastIndexOf("_"));
+				index = dictKeyToIndex.get(pos);
 			}
 			if (index >= tagDictionary.length)
 				return true;

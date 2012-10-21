@@ -68,9 +68,11 @@ public class SemiSupervisedPOSTagger {
 	 */
 	private ArrayList<String> indexToPOS;
 	private ArrayList<String> indexToWord;
+	private ArrayList<String> indexToDictKey;	// may point to the same thing as indexToWord, depending on options
 	private ArrayList<String> indexToFeature;
 	private Map<String, Integer> posToIndex;
 	private Map<String, Integer> wordToIndex;
+	private Map<String, Integer> dictKeyToIndex;	// may point to the same thing as wordToIndex, depending on options
 	private Map<String, Integer> featureToIndex;
 	private ArrayList<Integer> featureIndexCounts;
 	private List<Pair<Integer,Double>>[][] activeTransFeatures;
@@ -226,7 +228,7 @@ public class SemiSupervisedPOSTagger {
 			}
 			
 			// index the strings
-			int wordIndex = POSUtil.indexString(word, indexToWord, wordToIndex);
+			int wordIndex = POSUtil.indexString(word, indexToDictKey, dictKeyToIndex);
 			int[] intTags = new int[tags.length];
 			for (int i = 0; i < intTags.length; i++) {
 				intTags[i] = POSUtil.indexString(tags[i], indexToPOS, posToIndex);
@@ -237,7 +239,7 @@ public class SemiSupervisedPOSTagger {
 		BasicFileIO.closeFileAlreadyRead(bReader);
 		
 		// create the dictionary over indexed strings
-		int wordSize = indexToWord.size();
+		int wordSize = indexToDictKey.size();
 		tagDictionary = new int[wordSize][];
 		for (int i = 0; i < tagDictionary.length; i++) {
 			if (!tempDict.containsKey(i)) {	// token seen in the training data that is not in the dictionary
@@ -371,6 +373,17 @@ public class SemiSupervisedPOSTagger {
 				}
 			}
 		}
+		
+		
+		if (unlabeledFeatureFile==null) {
+			indexToDictKey = indexToWord;
+			dictKeyToIndex = wordToIndex;
+		}
+		else {
+			indexToDictKey = new ArrayList<String>();
+			dictKeyToIndex = new HashMap<String,Integer>();
+		}
+		
 		modelFile = (String) parser.getOptionValue(options.modelFile);
 		runOutput = (String) parser.getOptionValue(options.runOutput);
 		if (!useOnlyUnlabeledData) {
@@ -1141,7 +1154,7 @@ public class SemiSupervisedPOSTagger {
 		if (unlabeledFeatureFile!=null) {
 			emitFeatures = POSFeatureTemplates.getEmitFeaturesLoaded(useStandardFeatures, 
 					lengthNGramSuffixFeature,
-					useTagDictionary, wordToIndex, 
+					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
@@ -1154,7 +1167,7 @@ public class SemiSupervisedPOSTagger {
 			emitFeatures = 
 				POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
 					lengthNGramSuffixFeature,
-					useTagDictionary, wordToIndex, 
+					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
@@ -1824,7 +1837,7 @@ public class SemiSupervisedPOSTagger {
 		List<EmitFeatureTemplate> emitFeatures = 
 			POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
 					lengthNGramSuffixFeature,
-					useTagDictionary, wordToIndex, 
+					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
@@ -1985,7 +1998,7 @@ public class SemiSupervisedPOSTagger {
 		if (testSet!=null) {
 			emitFeatures = POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
 					lengthNGramSuffixFeature,
-					useTagDictionary, wordToIndex, 
+					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
@@ -1994,7 +2007,7 @@ public class SemiSupervisedPOSTagger {
 		} else {
 			emitFeatures = POSFeatureTemplates.getEmitFeaturesLoaded(useStandardFeatures, 
 					lengthNGramSuffixFeature,
-					useTagDictionary, wordToIndex, 
+					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
 					noahsFeatures,
