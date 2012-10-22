@@ -1,6 +1,7 @@
 package edu.cmu.cs.lti.ark.ssl.pos;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 import pos_tagging.ForwardBackward;
 
@@ -121,6 +122,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 	
 	public void setWeights(double[] weights0) {
 		this.weights = weights0;
+		int nNonzero = 0;
+		for (double w : weights) {
+			if (w!=0.0) nNonzero++;
+		}
+		Logger.getLogger(GradientGenSequenceModel.class.getCanonicalName()).info(nNonzero+" nonzero weights");
 	}
 	
 	public void computePotentials() {
