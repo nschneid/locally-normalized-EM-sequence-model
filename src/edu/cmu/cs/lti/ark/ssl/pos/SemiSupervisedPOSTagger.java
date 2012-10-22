@@ -137,8 +137,6 @@ public class SemiSupervisedPOSTagger {
 	private String stackedFile;
 	private int[][] stackedTags;	
 	private int numTags = 0;
-	private String noahsFeaturesFile = null;
-	private Map<String, String> noahsFeatures;
 	private String initTransitionsFile = null;
 	double[][] initTransProbs = null;
 	private boolean useDistSim;
@@ -476,13 +474,7 @@ public class SemiSupervisedPOSTagger {
 		if (useStackedFeatures) {
 			stackedFile = (String) parser.getOptionValue(options.stackedFile);
 		}
-		noahsFeaturesFile = (String) parser.getOptionValue(options.noahsFeaturesFile);
-		System.out.println("Noahs feature file:" + noahsFeaturesFile);
-		if (noahsFeaturesFile != null && !noahsFeaturesFile.equals("null")) {
-			noahsFeatures = getNoahsFeatures(noahsFeaturesFile);
-		} else {
-			noahsFeatures = null;
-		}
+		
 		initTransitionsFile = (String) parser.getOptionValue(options.initTransitionsFile);
 		System.out.println("File with initial transition probs:" + initTransitionsFile);
 		if (initTransitionsFile != null && !initTransitionsFile.equals("null") && !useTagDictionary) {
@@ -638,23 +630,6 @@ public class SemiSupervisedPOSTagger {
 		}
 		BasicFileIO.closeFileAlreadyRead(bReader);
 		return arr;
-	}
-
-	private Map<String, String> getNoahsFeatures(String noahsFeaturesFile) {
-		Map<String, String> map = new HashMap<String, String>();
-		BufferedReader bReader = BasicFileIO.openFileToRead(noahsFeaturesFile);
-		String line = BasicFileIO.getLine(bReader);
-		while (line != null) {
-			String[] toks = line.trim().split("\t");
-			map.put(toks[0], toks[1]);
-			line = BasicFileIO.getLine(bReader);
-		}
-		BasicFileIO.closeFileAlreadyRead(bReader);
-		return map;
-	}
-
-	private void readClusterToTagMappingFile() {
-
 	}
 
 	private void logInputInfo() {
@@ -1157,7 +1132,6 @@ public class SemiSupervisedPOSTagger {
 					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
-					noahsFeatures,
 					distSimTable,
 					namesArray,
 					true,
@@ -1170,7 +1144,6 @@ public class SemiSupervisedPOSTagger {
 					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
-					noahsFeatures,
 					distSimTable,
 					namesArray);
 		}
@@ -1840,7 +1813,6 @@ public class SemiSupervisedPOSTagger {
 					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
-					noahsFeatures,
 					distSimTable,
 					namesArray);	
 		log.info("Caching features...");
@@ -2001,7 +1973,6 @@ public class SemiSupervisedPOSTagger {
 					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
-					noahsFeatures,
 					distSimTable,
 					namesArray);
 		} else {
@@ -2010,7 +1981,6 @@ public class SemiSupervisedPOSTagger {
 					useTagDictionary, dictKeyToIndex, 
 					tagDictionary,
 					tagsToClusters,
-					noahsFeatures,
 					distSimTable,
 					namesArray,
 					true,

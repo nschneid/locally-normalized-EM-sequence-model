@@ -145,9 +145,6 @@ public class POSOptions {
 	@Option(gloss = "Number of unsupervised tags")
 	public CmdLineParser.Option numTags;	
 	
-	@Option(gloss = "File containing Noah's features")
-	public CmdLineParser.Option noahsFeaturesFile;
-	
 	@Option(gloss = "File containing initial transition probabilities")
 	public CmdLineParser.Option initTransitionsFile;
 	
@@ -213,7 +210,6 @@ public class POSOptions {
 		useStackedFeatures = parser.addBooleanOption("useStackedFeatures");
 		stackedFile = parser.addStringOption("stackedFile");
 		numTags = parser.addIntegerOption("numTags");
-		noahsFeaturesFile = parser.addStringOption("noahsFeaturesFile");
 		initTransitionsFile = parser.addStringOption("initTransitionsFile");
 		useDistSim = parser.addBooleanOption("useDistSim");
 		useNames = parser.addBooleanOption("useNames");

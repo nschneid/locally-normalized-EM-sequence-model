@@ -447,33 +447,6 @@ public class POSFeatureTemplates {
 		}
 	}
 	
-	public class VariousLexicalAspectsIndicatorFeature extends BaseEmitFeature  {
-		public String name = "noahlex"; 
-		public Map<String, String> nmap;
-		public VariousLexicalAspectsIndicatorFeature(boolean useTagDictionary0,
-				Map<String, Integer> dictKeyToIndex0, int[][] tagDictionary0,
-				int[][] tagMapping0,
-				Map<String, String> noahsFeatures) {
-			super(useTagDictionary0, dictKeyToIndex0, tagDictionary0, tagMapping0);
-			nmap = noahsFeatures;
-		}
-
-		public String getName() {return name;}
-
-		public List<Pair<String, Double>> getFeatures(int label, String word) {
-			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
-			if (nmap.containsKey(word)) {		
-				String feat = nmap.get(word);
-				if (isEmissionValid(useTagDictionary, word, dictKeyToIndex, tagDictionary, label, tagMapping)) {
-					features.add(Pair.makePair(String.format(name+"|%d|%s", label, feat), 1.0));
-				} else {
-					features.add(Pair.makePair(String.format(name+"|%d|%s", label, feat), Double.NEGATIVE_INFINITY));
-				}
-			}
-			return features;
-		}
-	}
-	
 	public class ContainsHTTPIndicatorFeature extends BaseEmitFeature  {
 		public String name = "http";
 
@@ -716,7 +689,6 @@ public class POSFeatureTemplates {
 			boolean uTd, Map<String, Integer> dki, 
 			int[][] td,
 			int[][] tM,
-			Map<String, String> noahsFeatures,
 			Map<String, double[]> distSimTable,
 			String[] namesArray) {		
 		POSFeatureTemplates templates = new POSFeatureTemplates();
@@ -757,7 +729,7 @@ public class POSFeatureTemplates {
 				emitFeatures.add(templates.new DistSimFeature(uTd, dki, td, tM, distSimTable));
 			}*/
 //			emitFeatures.add(templates.new OldMetaphoneFeatures(uTd, dki, td, tM));
-//			emitFeatures.add(templates.new VariousLexicalAspectsIndicatorFeature(uTd, dki, td, tM, noahsFeatures));
+//			emitFeatures.add(templates.new VariousLexicalAspectsIndicatorFeature(uTd, dki, td, tM));
 			
 		}
 		log.info("Emit features:");
@@ -774,7 +746,6 @@ public class POSFeatureTemplates {
 			boolean uTd, Map<String, Integer> dki, 
 			int[][] td,
 			int[][] tM,
-			Map<String, String> noahsFeatures,
 			Map<String, double[]> distSimTable,
 			String[] namesArray, 
 			boolean positional, int[] dictKeyFields) {		
