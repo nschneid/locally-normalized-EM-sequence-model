@@ -151,7 +151,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					norm += emitProbs[l][i];
 				}
 				if (norm==0.0 || Double.isInfinite(norm) || Double.isNaN(norm)) {
-					System.err.println("something's wrong: norm="+norm);
+					System.err.println("something's wrong: norm="+norm+" for label "+l);
 					System.exit(1);
 				}
 				for (int i=0; i<numObservations; ++i) {
