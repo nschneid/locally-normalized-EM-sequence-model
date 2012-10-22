@@ -375,7 +375,7 @@ public class SemiSupervisedPOSTagger {
 		}
 		
 		
-		if (unlabeledFeatureFile==null) {
+		if (unlabeledFeatureFile==null && testFeatureFile==null) {
 			indexToDictKey = indexToWord;
 			dictKeyToIndex = wordToIndex;
 		}
