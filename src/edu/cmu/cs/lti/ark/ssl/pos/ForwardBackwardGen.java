@@ -22,8 +22,11 @@ public class ForwardBackwardGen implements ForwardBackward {
 	private double[][] condExpectedEmitCounts;
 	private double[][] condExpectedStackedEmitCounts;
 	private int[][] posteriorDecoding;
+	private int[][] viterbiDecoding;
 	private double marginalLogLikelihood;
 	private boolean underflow;
+	private boolean storePosteriors;
+	private double[][][] allPosteriors;
 	
 	private class SequenceModel implements StationarySequenceModel {
 		
@@ -129,7 +132,8 @@ public class ForwardBackwardGen implements ForwardBackward {
 			int numObservations0, 
 			double[][] transProbs0, 
 			double[][] emitProbs0,
-			double[][] stackedEmitProbs0) {
+			double[][] stackedEmitProbs0,
+			boolean storePosteriors) {
 		this.numLabels = numLabels0+2;
 		this.numObservations = numObservations0;
 		this.observations = observations0;
@@ -145,12 +149,20 @@ public class ForwardBackwardGen implements ForwardBackward {
 		this.condExpectedStackedEmitCounts = new double[numLabels][numLabels - 2];
 		this.posteriorDecoding = new int[observations.length][];
 		this.underflow = false;
+		this.storePosteriors = storePosteriors;
+		if (storePosteriors) {
+			this.allPosteriors = new double[observations.length][][];
+		}
 	}
 
 	public int[][] posteriorDecode() {
 		return posteriorDecoding;
 	}
 	
+	public int[][] viterbiDecode() {
+		return viterbiDecoding;
+	}
+
 	public double getMarginalLogLikelihood() {
 		return marginalLogLikelihood;
 	}
@@ -176,6 +188,7 @@ public class ForwardBackwardGen implements ForwardBackward {
 			}
 		}
 		posteriorDecoding = new int[observations.length][];
+		viterbiDecoding = new int[observations.length][];
 		marginalLogLikelihood = 0.0;
 
 		
@@ -186,6 +199,10 @@ public class ForwardBackwardGen implements ForwardBackward {
 				condExpectedLabelCounts[stopLabel] += 1.0;
 				condExpectedTransCounts[startLabel][stopLabel] += 1.0;
 				posteriorDecoding[s] = new int[0];
+				viterbiDecoding[s] = new int[0];
+				if (storePosteriors) {
+					allPosteriors[s] = new double[0][];
+				}
 				marginalLogLikelihood += Math.log(transProbs[startLabel][stopLabel]);
 				continue;
 			}
@@ -207,8 +224,12 @@ public class ForwardBackwardGen implements ForwardBackward {
 				return;
 			}
 			posteriorDecoding[s] = forwardBackward.nodePosteriorDecode();
+			viterbiDecoding[s] = forwardBackward.viterbiDecode();
+
 			marginalLogLikelihood += forwardBackward.getLogNormalizationConstant();
-			
+			if (storePosteriors) {
+				allPosteriors[s] = new double[observationSequence.length][numLabels - 2];
+			}
 			// Label counts and emission counts
 			condExpectedLabelCounts[startLabel] += 1.0;
 			for (int i=0; i<observationSequence.length; ++i) {
@@ -217,6 +238,9 @@ public class ForwardBackwardGen implements ForwardBackward {
 					condExpectedEmitCounts[l][observationSequence[i]] += forwardBackward.getNodeMarginals()[i][l];
 					if (stackedLabels != null) {
 						condExpectedStackedEmitCounts[l][stackedSequence[i]] += forwardBackward.getNodeMarginals()[i][l];
+					}
+					if (storePosteriors) {
+						allPosteriors[s][i][l] = forwardBackward.getNodeMarginals()[i][l];
 					}
 				}
 			}
@@ -251,5 +275,9 @@ public class ForwardBackwardGen implements ForwardBackward {
 	
 	public double[][] getConditionalExpectedStackedEmitCounts() {
 		return condExpectedStackedEmitCounts;
+	}
+	
+	public double[][][] getNodePosteriors() {
+		return allPosteriors;
 	}
 }

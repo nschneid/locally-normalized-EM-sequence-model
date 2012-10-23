@@ -52,5 +52,7 @@ public abstract class GradientSequenceModel extends CachingDifferentiableFunctio
 	abstract public Pair<Double, double[]> calculate(double[] x);
 	
 	abstract public int dimension();
+	
+	abstract public double[][][] getAllPosteriors();
 
 }

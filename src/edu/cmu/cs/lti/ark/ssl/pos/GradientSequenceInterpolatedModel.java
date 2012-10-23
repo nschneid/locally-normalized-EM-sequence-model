@@ -39,7 +39,8 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 	public GradientSequenceInterpolatedModel(int[][] observations0,
 			int numLabels0, 
 			int numObservations0,
-			double[][][] tms) {
+			double[][][] tms,
+			boolean storePosteriors) {
 		this.regularizationBiases = new double[numFeatures];
 		this.regularizationWeights = new double[numFeatures];
 		this.numCalculates = 0;
@@ -63,7 +64,8 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 					numObservations, 
 					transProbs, 
 					emitProbs,
-					null);
+					null,
+					storePosteriors);
 	}
 
 	public ForwardBackward getForwardBackward() {
@@ -201,14 +203,23 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 		double score = 0.0;
 		for (int i=0; i<activeFeatures.size(); ++i) {
 			Pair<Integer,Double> feat = activeFeatures.get(i);
-			score += weights[feat.getFirst()] * feat.getSecond();
+			if (feat.getSecond() == Double.NEGATIVE_INFINITY) {
+				score = Double.NEGATIVE_INFINITY;
+			} else {
+				score += weights[feat.getFirst()] * feat.getSecond();
+			}
 		}
 		return score;
 	}
 
 	private static double computeScore(double[] weights, Pair<Integer,Double> activeFeature) {
 		Pair<Integer,Double> feat = activeFeature;
-		double score = weights[feat.getFirst()] * feat.getSecond();
+		double score = 0.0;
+		if (feat.getSecond() == Double.NEGATIVE_INFINITY) {
+			score = Double.NEGATIVE_INFINITY;
+		} else {
+			score = weights[feat.getFirst()] * feat.getSecond();
+		}
 		return score;
 	}
 
@@ -306,8 +317,10 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 				for (int i=0; i<numObservations; ++i) {
 					for (int f=0; f<activeEmitFeatures[s][i].size(); ++f) {
 						Pair<Integer,Double> feat = activeEmitFeatures[s][i].get(f);
-						gradient[feat.getFirst()] -= expectedEmitCounts[s][i]*feat.getSecond();
-						gradient[feat.getFirst()] -= -expectedLabelCounts[s]*emitProbs[s][i]*feat.getSecond();
+						if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+							gradient[feat.getFirst()] -= expectedEmitCounts[s][i]*feat.getSecond();
+							gradient[feat.getFirst()] -= -expectedLabelCounts[s]*emitProbs[s][i]*feat.getSecond();
+						}
 					}
 				}
 			}
@@ -325,4 +338,7 @@ public class GradientSequenceInterpolatedModel extends GradientSequenceModel {
 		return numFeatures;
 	}
 
+	public double[][][] getAllPosteriors() {
+		return forwardBackward.getNodePosteriors();
+	}
 }

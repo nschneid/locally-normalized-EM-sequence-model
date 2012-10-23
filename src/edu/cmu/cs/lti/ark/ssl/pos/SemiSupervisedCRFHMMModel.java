@@ -26,12 +26,14 @@ public class SemiSupervisedCRFHMMModel implements DifferentiableFunction {
 			double sigma0,
 			VertexFeatureExtractor vertexExtractor,
 			EdgeFeatureExtractor edgeExtractor,
-			int numFeatures0, double gamma0) {
+			int numFeatures0, double gamma0,
+			boolean storePosteriors) {
 		hmmModel = 
 			new GradientGenSequenceModel(uObservations0,
 					null,
 					numLabels0, 
-					numObservations0);
+					numObservations0,
+					storePosteriors);
 		crfModel = 
 			new CRFObjectiveFunction(lObservations0, 
 					goldLabels0, 

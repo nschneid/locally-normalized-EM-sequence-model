@@ -58,6 +58,7 @@ public class POSOptions extends ArgParser {
 	public BooleanHolder useInterpolation = new BooleanHolder();
 	public StringHolder fineToCoarseMapFile = new StringHolder(null);
 	public StringHolder pathToHelperTransitions = new StringHolder(null);
+	public BooleanHolder printPosteriors = new BooleanHolder();
 	
 	public POSOptions(String[] args) {
 		super("SemiSupervisedPOSTagger <options>\n\n" +
@@ -114,6 +115,7 @@ public class POSOptions extends ArgParser {
 		this.addOption("--useInterpolation %v #Use interpolation", useInterpolation);
 		this.addOption("--fineToCoarseMapFile %s #Fine to coarse tagmap file", fineToCoarseMapFile);
 		this.addOption("--pathToHelperTransitions %s #Comma separated path to helper transitions", pathToHelperTransitions);
+		this.addOption("--printPosteriors %v #Print posteriors", printPosteriors);
 	}
 	
 	public String[] parseArgs(String[] args) {	

@@ -231,5 +231,9 @@ public class SupervisedGenSequenceModel extends GradientSequenceModel {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public double[][][] getAllPosteriors() {
+		return null;
+	}
 	
 }

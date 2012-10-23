@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -140,6 +141,7 @@ public class SemiSupervisedPOSTagger {
 	private Map<String, double[]> distSimTable;
 	private boolean useNames;
 	private String[] namesArray;
+	private boolean printPosteriors = false;
 
 	// interpolation options
 	private boolean useInterpolation;
@@ -336,6 +338,7 @@ public class SemiSupervisedPOSTagger {
 				}
 			}
 		} else {
+			printPosteriors = options.printPosteriors.value;
 			testSet = options.testSet.value;
 			testFeatureFile = options.testFeatureFile.value;
 			if (!((testSet==null) ^ (testFeatureFile==null))) {
@@ -1159,7 +1162,8 @@ public class SemiSupervisedPOSTagger {
 					vertexExtractor, 
 					edgeExtractor,
 					indexToFeature.size(),
-					gamma);
+					gamma,
+					printPosteriors);
 		GradientSequenceModel hmmModel = 
 			grad.getHMMModel();
 
@@ -1221,7 +1225,8 @@ public class SemiSupervisedPOSTagger {
 			new GradientSequenceInterpolatedModel(uObservations,
 												 numLabels, 
 												 indexToWord.size(),
-												 transitionMatrices); 
+												 transitionMatrices,
+												 printPosteriors); 
 		// Cache active features
 		activeConvexCombiners = 
 			this.getActiveInterpolationFeatures(interpolationFeature, 
@@ -1309,7 +1314,8 @@ public class SemiSupervisedPOSTagger {
 		GradientSequenceModel grad = 
 			new GradientGenSequenceModel(uObservations,
 					stackedTags,
-					numLabels, indexToWord.size()); 
+					numLabels, indexToWord.size(),
+					printPosteriors); 
 		// Cache active features
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
@@ -1434,7 +1440,8 @@ public class SemiSupervisedPOSTagger {
 					lObservations, goldLabels, 
 					numLabels, indexToWord.size(),
 					indexToFeature.size(),
-					regularizationWeight);
+					regularizationWeight,
+					printPosteriors);
 		double[] zeroRegWeights = new double[indexToFeature.size()];
 		double[] zeroBiasWeights = new double[indexToFeature.size()];
 		Arrays.fill(zeroRegWeights, 0.0);
@@ -1902,7 +1909,8 @@ public class SemiSupervisedPOSTagger {
 		grad = new GradientGenSequenceModel(lObservations, 
 				stackedTags,
 				numLabels, 
-				indexToWord.size());
+				indexToWord.size(),
+				printPosteriors);
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
 					grad.getNumObservationTypes(), 
@@ -1949,9 +1957,48 @@ public class SemiSupervisedPOSTagger {
 		grad.computePotentials();
 		grad.getForwardBackward().compute();
 		double margProb = grad.calculateRegularizedLogMarginalLikelihood();
-		int[][] guessLabels = grad.getForwardBackward().posteriorDecode();
+		// int[][] guessLabels = grad.getForwardBackward().posteriorDecode();
+		int[][] guessLabels = ((ForwardBackwardGen)(grad.getForwardBackward())).viterbiDecode();
 		log.info("Log marginal prob: " + margProb);
 		evaluateCurrentScore(curveOut, grad.getWeights(), guessLabels, margProb, 0);
+		if (printPosteriors) {
+			double[][][] posteriors = grad.getAllPosteriors();
+			printPosteriors(posteriors);
+		}
+	}
+
+	public void printPosteriors(double[][][] posteriors) {
+		System.out.println("Printing posteriors....");
+		Comparator comp = new Comparator<Pair<String, Double>>() {
+			public int compare(Pair<String, Double> o1,
+					Pair<String, Double> o2) {
+				if (o1.getSecond() > o2.getSecond()) { 
+					return -1; 
+				} else if (o1.getSecond() == o2.getSecond()) {
+					return 0;
+				} else
+					return 1;
+			}
+		};
+		BufferedWriter bWriter = BasicFileIO.openFileToWrite(runOutput + ".posteriors");
+		int posSize = indexToPOS.size();
+		for (int i = 0; i < lObservations.length; i ++) {
+			for (int j = 0; j < goldLabels[i].length; j++) {
+				Pair<String, Double>[] arr = new Pair[posSize];
+				String line = indexToWord.get(lObservations[i][j]) + "\t";
+				for (int k = 0; k < posSize; k++) {
+					arr[k] = new Pair<String, Double>(indexToPOS.get(k), posteriors[i][j][k]);
+				}
+				Arrays.sort(arr, comp);
+				for (int k = 0; k < posSize; k++) {
+					line += arr[k].getFirst() + " " + arr[k].getSecond() + " ";
+				}
+				line = line.trim();
+				BasicFileIO.writeLine(bWriter, line);
+			}
+			BasicFileIO.writeLine(bWriter, "");
+		}
+		BasicFileIO.closeFileAlreadyWritten(bWriter);
 	}
 
 	private double scoreLabels(int[][] goldLabels, int[][] guessLabels) {

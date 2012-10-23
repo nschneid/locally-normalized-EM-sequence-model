@@ -32,7 +32,8 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 	public GradientGenSequenceModel(int[][] observations0,
 									int[][] stackedLabels0,
 								    int numLabels0, 
-								    int numObservations0) {
+								    int numObservations0,
+								    boolean storePosteriors) {
 		this.regularizationBiases = new double[numFeatures];
 		this.regularizationWeights = new double[numFeatures];
 		this.numCalculates = 0;
@@ -58,7 +59,8 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					numObservations, 
 					transProbs, 
 					emitProbs,
-					stackedEmitProbs);
+					stackedEmitProbs,
+					storePosteriors);
 	}
 	
 	public ForwardBackward getForwardBackward() {
@@ -311,6 +313,11 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 			double[] regularizationBiases0) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public double[][][] getAllPosteriors() {
+		return forwardBackward.getNodePosteriors();
 	}
 	
 }

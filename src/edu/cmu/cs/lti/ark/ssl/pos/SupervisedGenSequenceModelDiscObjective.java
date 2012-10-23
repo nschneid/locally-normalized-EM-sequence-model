@@ -21,7 +21,8 @@ public class SupervisedGenSequenceModelDiscObjective implements DifferentiableFu
 			int numLabels0, 
 			int numObservations0,
 			int numFeatures0,
-			double regularizationWeight0) {
+			double regularizationWeight0,
+			boolean storePosteriors) {
 		numerator = 
 			new SupervisedGenSequenceModel(observations0, 
 					goldLabels0,
@@ -31,7 +32,8 @@ public class SupervisedGenSequenceModelDiscObjective implements DifferentiableFu
 			new GradientGenSequenceModel(observations0, 
 					null,
 					numLabels0, 
-					numObservations0);
+					numObservations0,
+					storePosteriors);
 		numFeatures = numFeatures0;
 		regularizationWeight = regularizationWeight0;
 	}
