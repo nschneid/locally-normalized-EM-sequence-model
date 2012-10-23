@@ -757,6 +757,12 @@ public class SemiSupervisedPOSTagger {
 							activeFeatures[s][i].add(Pair.makePair(index, feature.getSecond()));
 						}
 					}
+					if (activeFeatures[s][i].size()==0) {
+						System.err.println("getActiveEmitFeatures(): no active features for label "+s+", observation type "+i);
+						System.err.println("indexToWord.get("+i+") = "+indexToWord.get(i));
+						System.err.println("indexToPOS.get("+s+") = "+indexToPOS.get(s));
+						System.exit(1);
+					}
 				}
 			}
 		}
