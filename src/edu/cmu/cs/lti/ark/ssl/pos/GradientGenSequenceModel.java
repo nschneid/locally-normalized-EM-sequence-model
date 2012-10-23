@@ -160,6 +160,13 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 				}
 				if (norm==0.0 || Double.isInfinite(norm) || Double.isNaN(norm)) {
 					System.err.println("something's wrong: norm="+norm+" for label "+l+" (numLabels="+numLabels+" incl. start and stop)");
+					System.err.println("active features:");
+					for (int i=0; i<numObservations; ++i) {
+						for (Pair<Integer,Double> featAndVal : activeEmitFeatures[l][i]) {
+							System.err.print(weights[featAndVal.getFirst()] + "  " + featAndVal);
+						}
+						System.err.println();
+					}
 					System.exit(1);
 				}
 				for (int i=0; i<numObservations; ++i) {
