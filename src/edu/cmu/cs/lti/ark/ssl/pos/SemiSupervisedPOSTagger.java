@@ -1910,13 +1910,17 @@ public class SemiSupervisedPOSTagger {
 			e.printStackTrace();
 		}
 		// Do gradient ascent
-		GradientSequenceModel grad = null;
 		int numLabels = indexToPOS.size();
-		grad = new GradientGenSequenceModel(lObservations, 
+		GradientSequenceModel grad = new GradientGenSequenceModel(lObservations, 
 				stackedTags,
 				numLabels, 
 				indexToWord.size(),
 				printPosteriors);
+		log.info(String.format("numObservationTypes=%d numLabels=%d startLabel=%d stopLabel=%d", 
+				grad.getNumObservationTypes(), 
+				grad.getNumLabels(), 
+				grad.getStartLabel(), 
+				grad.getStopLabel()));
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
 					grad.getNumObservationTypes(), 
