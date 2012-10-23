@@ -1,7 +1,5 @@
 package edu.cmu.cs.lti.ark.ssl.pos;
 
-import jargs.gnu.CmdLineParser;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -60,7 +58,6 @@ public class SemiSupervisedPOSTagger {
 	}
 
 	private POSOptions options;	
-	private CmdLineParser parser;
 
 	/**
 	 * Variables needed for training and testing
@@ -171,14 +168,13 @@ public class SemiSupervisedPOSTagger {
 
 	public static void main(String[] args) {
 		POSOptions options = new POSOptions(args);
-		options.parseArgs(args);		
+		options.parseArgs(args);
 		SemiSupervisedPOSTagger tagger = new SemiSupervisedPOSTagger(options);
 		tagger.run();
 	}
 
 	public SemiSupervisedPOSTagger(POSOptions options0) {
 		options = options0;
-		parser = options.parser;
 		setVariousOptions();
 		createExecutionDirectory();
 	}
@@ -278,37 +274,30 @@ public class SemiSupervisedPOSTagger {
 	}
 
 	private void setVariousOptions() {
-		trainOrTest = (String) parser.getOptionValue(options.trainOrTest);
+		trainOrTest = options.trainOrTest.value;
 		if (trainOrTest.equals("train")) {
-			trainSet = (String) parser.getOptionValue(options.trainSet);
-			useUnlabeledData = parser.getOptionValue(options.useUnlabeledData) 
-			== null ? false : true;
+			trainSet = options.trainSet.value;
+			useUnlabeledData = options.useUnlabeledData.value;
 			if (useUnlabeledData) {
-				unlabeledSet = 
-					(String) parser.getOptionValue(options.unlabeledSet);
-				unlabeledFeatureFile = 
-					(String) parser.getOptionValue(options.unlabeledFeatureFile);
+				unlabeledSet = options.unlabeledSet.value;
+				unlabeledFeatureFile = options.unlabeledFeatureFile.value;
 				if (!((unlabeledSet==null) ^ (unlabeledFeatureFile==null))) {
 					System.err.println("Should have exactly one of: --unlabeledSet or --unlabeledFeatureFile");
 					System.exit(1);
 				}
-				numUnLabeledSentences =
-					(Integer) parser.getOptionValue(options.numUnLabeledSentences);
-				useSameSetOfFeatures = parser.getOptionValue(options.useSameSetOfFeatures)
-				== null ? false : true;				
+				numUnLabeledSentences = options.numUnLabeledSentences.value;
+				useSameSetOfFeatures = options.useSameSetOfFeatures.value;				
 				if (useSameSetOfFeatures) {
-					startWithTrainedSupervisedModel = parser.getOptionValue(options.startWithTrainedSupervisedModel)
-					== null ? false : true;
+					startWithTrainedSupervisedModel = options.startWithTrainedSupervisedModel.value;
 					if (startWithTrainedSupervisedModel) {
-						trainedSupervisedModelFile = (String) parser.getOptionValue(options.trainedSupervisedModel);
+						trainedSupervisedModelFile = options.trainedSupervisedModel.value;
 					}
 				}
-				gamma = (Double) parser.getOptionValue(options.gamma);
-				useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
-				== null ? false : true;
+				gamma = options.gamma.value;
+				useTagDictionary = options.useTagDictionary.value;
 				if (useTagDictionary) {
-					tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-					String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+					tagDictionaryFile = options.tagDictionaryFile.value;
+					String keyFields = options.tagDictionaryKeyFields.value;
 					if (keyFields!=null) {
 						String[] fields = keyFields.split(",");
 						tagDictionaryKeyFields = new int[fields.length];
@@ -317,31 +306,26 @@ public class SemiSupervisedPOSTagger {
 					}
 				}
 			} else {
-				useOnlyUnlabeledData = parser.getOptionValue(options.useOnlyUnlabeledData) 
-				== null ? false : true;
+				useOnlyUnlabeledData = options.useOnlyUnlabeledData.value;
 				if (useOnlyUnlabeledData) {
-					regParametersModelFile = (String) parser.getOptionValue(options.regParametersModel);
+					regParametersModelFile = options.regParametersModel.value;
 					if (regParametersModelFile != null && !regParametersModelFile.equals("null")) {
 						regParametersModel = (POSModel) BasicFileIO.readSerializedObject(regParametersModelFile);
 					} else {
 						regParametersModel = null;
-						numTags = (Integer) parser.getOptionValue(options.numTags);
+						numTags = options.numTags.value;
 					}
-					unlabeledSet = 
-						(String) parser.getOptionValue(options.unlabeledSet);
-					unlabeledFeatureFile = 
-							(String) parser.getOptionValue(options.unlabeledFeatureFile);
+					unlabeledSet = options.unlabeledSet.value;
+					unlabeledFeatureFile = options.unlabeledFeatureFile.value;
 					if (!((unlabeledSet==null) ^ (unlabeledFeatureFile==null))) {
 						System.err.println("Should have exactly one of: --unlabeledSet or --unlabeledFeatureFile");
 						System.exit(1);
 					}
-					numUnLabeledSentences =
-						(Integer) parser.getOptionValue(options.numUnLabeledSentences);
-					useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
-					== null ? false : true;
+					numUnLabeledSentences = options.numUnLabeledSentences.value;
+					useTagDictionary = options.useTagDictionary.value;
 					if (useTagDictionary) {
-						tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-						String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+						tagDictionaryFile = options.tagDictionaryFile.value;
+						String keyFields = options.tagDictionaryKeyFields.value;
 						if (keyFields!=null) {
 							String[] fields = keyFields.split(",");
 							tagDictionaryKeyFields = new int[fields.length];
@@ -352,17 +336,16 @@ public class SemiSupervisedPOSTagger {
 				}
 			}
 		} else {
-			testSet = (String) parser.getOptionValue(options.testSet);
-			testFeatureFile = (String) parser.getOptionValue(options.testFeatureFile);
+			testSet = options.testSet.value;
+			testFeatureFile = options.testFeatureFile.value;
 			if (!((testSet==null) ^ (testFeatureFile==null))) {
 				System.err.println("Should have exactly one of: --testSet or --testFeatureFile");
 				System.exit(1);
 			}
-			useTagDictionary = parser.getOptionValue(options.useTagDictionary) 
-					== null ? false : true;
+			useTagDictionary = options.useTagDictionary.value;
 			if (useTagDictionary) {
-				tagDictionaryFile = (String) parser.getOptionValue(options.tagDictionaryFile);
-				String keyFields = (String) parser.getOptionValue(options.tagDictionaryKeyFields);
+				tagDictionaryFile = options.tagDictionaryFile.value;
+				String keyFields = options.tagDictionaryKeyFields.value;
 				if (keyFields!=null) {
 					String[] fields = keyFields.split(",");
 					tagDictionaryKeyFields = new int[fields.length];
@@ -382,128 +365,49 @@ public class SemiSupervisedPOSTagger {
 			dictKeyToIndex = new HashMap<String,Integer>();
 		}
 		
-		modelFile = (String) parser.getOptionValue(options.modelFile);
-		runOutput = (String) parser.getOptionValue(options.runOutput);
-		if (!useOnlyUnlabeledData) {
-			numLabeledSentences = (Integer) parser.getOptionValue(options.numLabeledSentences);
-		}
-		maxSentenceLength = (Integer)
-		parser.getOptionValue(options.maxSentenceLength);
-		iters = (Integer)
-		parser.getOptionValue(options.iters);
-		printRate = (Integer)
-		parser.getOptionValue(options.printRate);
-		useStandardMultinomialMStep = 
-			parser.getOptionValue(options.useStandardMultinomialMStep)
-			== null ? false : true;
-		Double standardMStepCountSmoothing0 = (Double)
-		parser.getOptionValue(options.standardMStepCountSmoothing);
-		if (standardMStepCountSmoothing0 == null) {
-			standardMStepCountSmoothing = 0.0;
-		} else {
-			standardMStepCountSmoothing = standardMStepCountSmoothing0;
-		}			
-		useGlobalForLabeledData = (Boolean)
-		parser.getOptionValue(options.useGlobalForLabeledData)
-		== null ? false : true;
-		trainHMMDiscriminatively = (Boolean)
-		parser.getOptionValue(options.trainHMMDiscriminatively)
-		== null ? false : true;
-		Double initialWeightsUpper0 = (Double)
-		parser.getOptionValue(options.initialWeightsUpper);
-		if (initialWeightsUpper0 == null) {
-			initialWeightsUpper = 0.01;
-		} else {
-			initialWeightsUpper = initialWeightsUpper0;
-		}			
-		Double initialWeightsLower0 = (Double)
-		parser.getOptionValue(options.initialWeightsLower);
-		if (initialWeightsLower0 == null) {
-			initialWeightsLower = -0.01;
-		} else {
-			initialWeightsLower = initialWeightsLower0;
-		}
-		Double regularizationWeight0 = (Double)
-		parser.getOptionValue(options.regularizationWeight);
-		if (regularizationWeight0 == null) {
-			regularizationWeight = 0.0;
-		} else {
-			regularizationWeight = regularizationWeight0;
-		}
-		Double regularizationBias0 = (Double)
-		parser.getOptionValue(options.regularizationBias);
-		if (regularizationBias0 == null) {
-			regularizationBias = 0.0;
-		} else {
-			regularizationBias = regularizationBias0;
-		}
-		useStandardFeatures = (Boolean)
-		parser.getOptionValue(options.useStandardFeatures)
-		== null ? false : true;
-		Integer lengthNGramSuffixFeature0 = (Integer)
-		parser.getOptionValue(options.lengthNGramSuffixFeature);
-		if (lengthNGramSuffixFeature0 == null) {
-			lengthNGramSuffixFeature = 3;
-		} else {
-			lengthNGramSuffixFeature = lengthNGramSuffixFeature0;
-		}
-		useBiasFeature = (Boolean)
-		parser.getOptionValue(options.useBiasFeature)
-		== null ? false : true;
+		modelFile = options.modelFile.value;
+		runOutput = options.runOutput.value;
+		if (!useOnlyUnlabeledData) numLabeledSentences = options.numLabeledSentences.value;
+		maxSentenceLength = options.maxSentenceLength.value;
+		iters = options.iters.value;
+		printRate = options.printRate.value;
+		useStandardMultinomialMStep = options.useStandardMultinomialMStep.value;
+		standardMStepCountSmoothing = options.standardMStepCountSmoothing.value;
+		useGlobalForLabeledData = options.useGlobalForLabeledData.value;
+		trainHMMDiscriminatively = options.trainHMMDiscriminatively.value;
+		initialWeightsUpper = options.initialWeightsUpper.value;
+		initialWeightsLower = options.initialWeightsLower.value;
+		regularizationWeight = options.regularizationWeight.value;
+		regularizationBias = options.regularizationBias.value;
+		useStandardFeatures = options.useStandardFeatures.value;
+		lengthNGramSuffixFeature = options.lengthNGramSuffixFeature.value;
+		useBiasFeature = options.useBiasFeature.value;
 		if (useBiasFeature) {
-			biasFeatureBias = (Double)
-			parser.getOptionValue(options.biasFeatureBias);
-			biasFeatureRegularizationWeight = (Double)
-			parser.getOptionValue(options.biasFeatureRegularizationWeight);
+			biasFeatureBias = options.biasFeatureBias.value;
+			biasFeatureRegularizationWeight = options.biasFeatureRegularizationWeight.value;
 		}
-		Integer randSeedIndex0 = (Integer)
-		parser.getOptionValue(options.randSeedIndex);
-		if (randSeedIndex0 == null) {
-			randSeedIndex0 = 1;
-		} else {
-			randSeedIndex = randSeedIndex0;
-		}
-		execPoolDir = (String) parser.getOptionValue(options.execPoolDir);
-		restartTraining = (Boolean) parser.getOptionValue(options.restartTraining)
-		== null ? false : true;
-		if (restartTraining) {
-			restartModelFile = (String) parser.getOptionValue(options.restartModelFile);
-		}		
-		useStackedFeatures = (Boolean)
-		parser.getOptionValue(options.useStackedFeatures) == null ? false : true;
-		if (useStackedFeatures) {
-			stackedFile = (String) parser.getOptionValue(options.stackedFile);
-		}
+		randSeedIndex = options.randSeedIndex.value;
+		execPoolDir = options.execPoolDir.value;
+		restartTraining = options.restartTraining.value;
+		if (restartTraining) restartModelFile = options.restartModelFile.value;
+		useStackedFeatures = options.useStackedFeatures.value;
+		if (useStackedFeatures) stackedFile = options.stackedFile.value;
 		
-		initTransitionsFile = (String) parser.getOptionValue(options.initTransitionsFile);
+		initTransitionsFile = options.initTransitionsFile.value;
 		System.out.println("File with initial transition probs:" + initTransitionsFile);
-		if (initTransitionsFile != null && !initTransitionsFile.equals("null") && !useTagDictionary) {
+		if (initTransitionsFile != null && !initTransitionsFile.equals("null") && !useTagDictionary)
 			initTransProbs = getInitTransProbs(initTransitionsFile);
-		} else {
+		else
 			initTransProbs = null;
-		}
-		useDistSim = (Boolean)
-		parser.getOptionValue(options.useDistSim)
-		== null ? false : true;
-		if (useDistSim) {
-			distSimTable = readDistSim();
-		} else {
-			distSimTable = null;
-		}
-		useNames = (Boolean)
-		parser.getOptionValue(options.useNames)
-		== null ? false : true;
-		if (useNames) {
-			namesArray = getNames();
-		} else {
-			namesArray = null;
-		}
-		useInterpolation = (Boolean)
-		parser.getOptionValue(options.useInterpolation)
-		== null ? false : true;
+		
+		useDistSim = options.useDistSim.value;
+		distSimTable = (useDistSim) ? readDistSim() : null;
+		useNames = options.useNames.value;
+		namesArray = (useNames) ? getNames() : null;
+		useInterpolation = options.useInterpolation.value;
 		if (useInterpolation) {
-			pathToHelperTransitions = (String) parser.getOptionValue(options.pathToHelperTransitions);
-			fineToCoarseMapFile = (String) parser.getOptionValue(options.fineToCoarseMapFile);
+			pathToHelperTransitions = options.pathToHelperTransitions.value;
+			fineToCoarseMapFile = options.fineToCoarseMapFile.value;
 			String[] paths = pathToHelperTransitions.split(",");
 			numHelperLanguages = paths.length;
 			if (!useTagDictionary) getHelperTransitions(paths);
