@@ -52,6 +52,7 @@ public class POSOptions extends ArgParser {
 	public BooleanHolder useStackedFeatures = new BooleanHolder();
 	public StringHolder stackedFile = new StringHolder(null);
 	public IntHolder numTags = new IntHolder();	
+	public BooleanHolder bio = new BooleanHolder();
 	public StringHolder initTransitionsFile = new StringHolder(null);
 	public BooleanHolder useDistSim = new BooleanHolder();
 	public BooleanHolder useNames = new BooleanHolder();	
@@ -109,6 +110,7 @@ public class POSOptions extends ArgParser {
 		this.addOption("--useStackedFeatures %v #Use stacked features", useStackedFeatures);
 		this.addOption("--stackedFile %s #Stacked file", stackedFile);
 		this.addOption("--numTags %i #Number of unsupervised tags", numTags);
+		this.addOption("--bio %v #BIO tags; ban incoherent transitions", bio);
 		this.addOption("--initTransitionsFile %s #File containing initial transition probabilities", initTransitionsFile);
 		this.addOption("--useDistSim %v #Use distributional similarities", useDistSim);
 		this.addOption("--useNames %v #Use names", useNames);

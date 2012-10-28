@@ -125,10 +125,15 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 	public void setWeights(double[] weights0) {
 		this.weights = weights0;
 		int nNonzero = 0;
+		int negInf = 0;
 		for (double w : weights) {
-			if (w!=0.0) nNonzero++;
+			if (w!=0.0) {
+				nNonzero++;
+				if (w==Double.NEGATIVE_INFINITY)
+					negInf++;
+			}
 		}
-		Logger.getLogger(GradientGenSequenceModel.class.getCanonicalName()).info(nNonzero+" nonzero weights");
+		Logger.getLogger(GradientGenSequenceModel.class.getCanonicalName()).info(nNonzero+" nonzero weights, "+negInf+" of which are -Infinity");
 	}
 	
 	public void computePotentials() {
@@ -201,7 +206,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 		double score = 0.0;
 		for (int i=0; i<activeFeatures.size(); ++i) {
 			Pair<Integer,Double> feat = activeFeatures.get(i);
-			if (feat.getSecond() == Double.NEGATIVE_INFINITY) {
+			if (feat.getSecond() == Double.NEGATIVE_INFINITY || weights[feat.getFirst()]==Double.NEGATIVE_INFINITY) {
 				score = Double.NEGATIVE_INFINITY;
 			} else {
 				score += weights[feat.getFirst()] * feat.getSecond();
@@ -217,7 +222,9 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 	public double calculateRegularizer() {
 		double result = 0.0;
 		for (int f=0; f<numFeatures; ++f) {
-			result += regularizationWeights[f]*(weights[f] - regularizationBiases[f])*(weights[f] - regularizationBiases[f]);
+			if (weights[f]!=Double.NEGATIVE_INFINITY) {
+				result += regularizationWeights[f]*(weights[f] - regularizationBiases[f])*(weights[f] - regularizationBiases[f]);
+			}
 		}
 		return result;
 	}
@@ -245,7 +252,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					if (s1 != startLabel) {
 						for (int f=0; f<activeTransFeatures[s0][s1].size(); ++f) {
 							Pair<Integer,Double> feat = activeTransFeatures[s0][s1].get(f);
-							if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+							if (feat.getSecond() != Double.NEGATIVE_INFINITY && weights[feat.getFirst()]!=Double.NEGATIVE_INFINITY) {
 								gradient[feat.getFirst()] -= expectedTransCounts[s0][s1]*feat.getSecond();
 								gradient[feat.getFirst()] -= -expectedLabelCounts[s0]*transProbs[s0][s1]*feat.getSecond();
 							}
@@ -262,7 +269,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 				for (int i=0; i<numObservations; ++i) {
 					for (int f=0; f<activeEmitFeatures[s][i].size(); ++f) {
 						Pair<Integer,Double> feat = activeEmitFeatures[s][i].get(f);
-						if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+						if (feat.getSecond() != Double.NEGATIVE_INFINITY && weights[feat.getFirst()]!=Double.NEGATIVE_INFINITY) {
 							gradient[feat.getFirst()] -= expectedEmitCounts[s][i]*feat.getSecond();
 							gradient[feat.getFirst()] -= -expectedLabelCounts[s]*emitProbs[s][i]*feat.getSecond();
 						}
@@ -281,7 +288,7 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 					for (int i=0; i<numLabels-2; ++i) {
 						for (int f=0; f<activeStackedFeatures[s][i].size(); ++f) {
 							Pair<Integer,Double> feat = activeStackedFeatures[s][i].get(f);
-							if (feat.getSecond() != Double.NEGATIVE_INFINITY) {
+							if (feat.getSecond() != Double.NEGATIVE_INFINITY && weights[feat.getFirst()]!=Double.NEGATIVE_INFINITY) {
 								gradient[feat.getFirst()] -= expectedStackedEmitCounts[s][i]*feat.getSecond();
 								gradient[feat.getFirst()] -= -expectedLabelCounts[s]*stackedEmitProbs[s][i]*feat.getSecond();
 							}
@@ -294,7 +301,8 @@ public class GradientGenSequenceModel extends GradientSequenceModel {
 		
 		// Add gradient of regularizer
 		for (int f=0; f<numFeatures; ++f) {
-			gradient[f] -= -2.0*regularizationWeights[f]*(weights[f] - regularizationBiases[f]);
+			if (weights[f]!=Double.NEGATIVE_INFINITY)
+				gradient[f] -= -2.0*regularizationWeights[f]*(weights[f] - regularizationBiases[f]);
 		}
 
 		//TODO: correct for any changes to the regularization term due to zeroing out of regularization weights above?

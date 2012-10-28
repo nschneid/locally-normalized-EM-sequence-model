@@ -1279,20 +1279,17 @@ public class SemiSupervisedPOSTagger {
 	/** shared helper function to avoid code duplication */
 	private void _h2(FileWriter curveOut, GradientSequenceModel grad) {
 		// Initialize weights to 0.0;
-		double[] initialWeights;
-		if (regParametersModel != null) {
-			initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
+		double[] initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
+		if (regParametersModel != null)
 			initialWeights = initializeFeatureWeightsWithTrainedValues(initialWeights);
-		} else {
-			initialWeights = uniformRandomWeights(indexToFeature.size(), initialWeightsLower, initialWeightsUpper, rands[0]);
-			if (initTransProbs != null) {
-				initialWeights = 
-						initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
-			}
-		}
-		if (useBiasFeature) {
+		else if (initTransProbs != null)
+			initialWeights = initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
+		else if (options.bio.value)
+			initialWeights = initializeFeatureWeightsBIO(initialWeights, grad);
+		
+		if (useBiasFeature)
 			initialWeights[featureToIndex.get("bias")] = biasFeatureBias;
-		}
+		
 		grad.setWeights(initialWeights);
 		POSModel model = new POSModel();
 		model.setFeatureIndexCounts(featureIndexCounts);
@@ -1308,6 +1305,7 @@ public class SemiSupervisedPOSTagger {
 				crfCallBack,
 				iters);
 		log.info("Finished training with LBFGS");
+		grad.setWeights(w);	// for debugging output
 		model.setWeights(w);
 		BasicFileIO.writeSerializedObject(modelFile, model);
 	}
@@ -1385,6 +1383,67 @@ public class SemiSupervisedPOSTagger {
 			}
 			double prob = initTransProbs[index1][index2];
 			initialWeights[i] = Math.log(prob);
+		}
+		return initialWeights;
+	}
+	
+	private double[] initializeFeatureWeightsBIO(
+			double[] initialWeights,
+			GradientSequenceModel grad) {
+		System.out.println("Reading initial transition proababilities...");
+		int numLabels = grad.getNumLabels();
+		int startLabel = grad.getStartLabel();
+		int stopLabel = grad.getStopLabel();
+		
+		int featLen = indexToFeature.size();
+		for (int i = 0; i < featLen; i++) {
+			String feat = indexToFeature.get(i);
+			if (!feat.startsWith("tind")) {
+				continue;
+			}
+			// transition feature
+			// read label indices from feature name
+			String[] toks = feat.trim().split("\\|");
+			int label1 = new Integer(toks[toks.length-2]);
+			int label2 = new Integer(toks[toks.length-1]);
+			/*
+			int index1 = label1;
+			int index2 = label2;
+			
+			if (label1 == startLabel)
+				index1 = initTransProbs.length - 1;
+			else if (label1 == stopLabel)
+				index1 = initTransProbs.length - 2;
+			
+			if (label2 == startLabel)
+				index2 = initTransProbs.length - 1;
+			else if (label2 == stopLabel)
+				index2 = initTransProbs.length - 2;
+			*/
+			
+			if (label2==stopLabel)	// legal
+				continue;
+			
+			String lbl2 = indexToPOS.get(label2);
+			
+			if (lbl2.charAt(0)=='I') {
+				if (label1==startLabel) {	// illegal transition
+					initialWeights[i] = Double.NEGATIVE_INFINITY;
+					continue;
+				}
+				String lbl1 = indexToPOS.get(label1);
+				if (lbl1.charAt(0)=='O' || !lbl1.substring(1).equals(lbl2.substring(1))){
+					// illegal transition
+					initialWeights[i] = Double.NEGATIVE_INFINITY;
+				}
+			}
+			else if (lbl2.charAt(0)!='B' && !lbl2.equals("O")) {
+				System.err.println("Invalid BIO label (index "+label2+"): "+lbl2);
+				System.exit(1);
+			}
+			
+			//double prob = initTransProbs[index1][index2];
+			//initialWeights[i] = Math.log(prob);
 		}
 		return initialWeights;
 	}
@@ -1712,7 +1771,7 @@ public class SemiSupervisedPOSTagger {
 					posToIndex);
 			stackedTags = pairList.getSecond();
 			for (int i = 0; i < stackedTags.length; i ++) {
-				if (stackedTags[i].length != lObservations.length) {
+				if (stackedTags[i].length != lObservations[i].length) {	// was lObservations.length, but that was apparently a bug
 					log.severe("Problem with length of sentence:" + i);
 					System.exit(-1);
 				}
@@ -1858,6 +1917,14 @@ public class SemiSupervisedPOSTagger {
 				wordToIndex, 
 				indexToPOS, 
 				posToIndex);
+		
+		System.out.println("Use tag dictionary..." + useTagDictionary);
+		numTags = indexToPOS.size();
+		if (useTagDictionary) {
+			System.out.println("Reading tag dictionary...");
+			readTagDictionary();
+		}
+		
 		lObservations = pairList.getFirst();
 		goldLabels = pairList.getSecond();
 		logObservationInfo();
