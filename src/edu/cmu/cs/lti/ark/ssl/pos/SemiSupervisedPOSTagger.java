@@ -540,43 +540,45 @@ public class SemiSupervisedPOSTagger {
 	}
 
 	private void logInputInfo() {
-		log.info("Use standard multinomial MStep: " + useStandardMultinomialMStep);
-		log.info("Use global: " + useGlobalForLabeledData);
-		log.info("Use standard features: " + useStandardFeatures);
-		log.info("Num gold labels: " +  indexToPOS.size());
-		log.info("Num word types: " + indexToWord.size());
-		log.info("Regularization weight: " + regularizationWeight);
-		log.info("Regularization bias: " + regularizationBias);
-		log.info("Use bias feature: " + useBiasFeature);
+		String s = "";
+		s += "Use standard multinomial MStep: " + useStandardMultinomialMStep;
+		s += "\nUse global: " + useGlobalForLabeledData;
+		s += "\nUse standard features: " + useStandardFeatures;
+		s += "\nNum gold labels: " +  indexToPOS.size();
+		s += "\nNum word types: " + indexToWord.size();
+		s += "\nRegularization weight: " + regularizationWeight;
+		s += "\nRegularization bias: " + regularizationBias;
+		s += "\nUse bias feature: " + useBiasFeature;
 		if (useBiasFeature) {
-			log.info("Bias feature bias: " + biasFeatureBias);
-			log.info("Bias feature regularization weight: " +
-					biasFeatureRegularizationWeight);
+			s += "\nBias feature bias: " + biasFeatureBias;
+			s += "\nBias feature regularization weight: " +
+					biasFeatureRegularizationWeight;
 		}
-		log.info("Gold POS labels: " + indexToPOS.toString());
-		log.info("Initial random weights lower: " + 
-				initialWeightsLower);
-		log.info("Initial random weights upper: " +
-				initialWeightsUpper);
+		s += "\nGold POS labels: " + indexToPOS.toString();
+		s += "\nInitial random weights lower: " + 
+				initialWeightsLower;
+		s += "\nInitial random weights upper: " +
+				initialWeightsUpper;
 		if (useUnlabeledData) {
 			if (useSameSetOfFeatures) {
-				log.info("Using same set of features in CRF and HMM");
+				s += "\nUsing same set of features in CRF and HMM";
 				if (startWithTrainedSupervisedModel) {
-					log.info("Starting with a trained supervised model: "+ trainedSupervisedModelFile);
+					s += "\nStarting with a trained supervised model: "+ trainedSupervisedModelFile;
 				}
 			} else {
-				log.info("Not using same set of features in CRF and HMM");
+				s += "\nNot using same set of features in CRF and HMM";
 			}
 		}
 		if (!useGlobalForLabeledData) {
 			if (trainHMMDiscriminatively) {
-				log.info("Training the HMM in a discriminative fashion.");
+				s += "\nTraining the HMM in a discriminative fashion.";
 			}
 		}
 		if (useStackedFeatures) {
-			log.info("Using stacked features");
-			log.info("Stacked tag file:" + stackedFile);
+			s += "\nUsing stacked features";
+			s += "\nStacked tag file:" + stackedFile;
 		}
+		log.info(s);
 	}
 
 
@@ -621,12 +623,14 @@ public class SemiSupervisedPOSTagger {
 			}
 		}
 
-		log.info("Number of total tokens: " + numTokens);
-		log.info("Maximum sequence length: " + maxSeqLength);
-		log.info("Size of primary observations:" + observations.length);
+		String s = "";
+		s += "Number of total tokens: " + numTokens;
+		s += "\nMaximum sequence length: " + maxSeqLength;
+		s += "\nSize of primary observations:" + observations.length;
 		if (useUnlabeledData) {
-			log.info("Size of unlabeled observations:" + uObservations.length);
+			s += "\nSize of unlabeled observations:" + uObservations.length;
 		}
+		log.info(s);
 	}
 
 	public List<Pair<Integer,Double>>[][] getActiveCRFTransFeatures(
@@ -2173,9 +2177,7 @@ public class SemiSupervisedPOSTagger {
 			for (int f=0; f<grad.length; ++f) {
 				derivative += grad[f] * grad[f];
 			}
-			log.info("End of iteration:"+ iteration);
-			log.info("Log probability:" + margProb);
-			log.info("Derivative: " + derivative);
+			log.info("End of iteration:"+ iteration + "\nLog probability:" + margProb + "\nDerivative: " + derivative);
 			if(iteration % 10 == 0) {
 				model.setWeights(weights);
 				BasicFileIO.writeSerializedObject(modelFile+"_"+iteration, model);
