@@ -60,13 +60,20 @@ public class POSFeatureTemplates {
 	
 	public class TransIndicatorFeature implements TransFeatureTemplate {
 
-		public String name = "tind"; 
-
+		public String name = "tind";
+		
+		protected boolean[][] isTransIllegal;
+		
 		public String getName() {return name;}
+		
+		public TransIndicatorFeature(boolean[][] isTransIllegal) {
+			this.isTransIllegal = isTransIllegal;
+		}
 
 		public List<Pair<String, Double>> getFeatures(int label1, int label2) {
 			List<Pair<String, Double>> features = new ArrayList<Pair<String,Double>>();
-			features.add(Pair.makePair(String.format(name+"|%d|%d", label1, label2), 1.0));
+			features.add(Pair.makePair(String.format(name+"|%d|%d", label1, label2), 
+					((isTransIllegal==null || !isTransIllegal[label1][label2]) ? 1.0 : Double.NEGATIVE_INFINITY)));
 			return features;
 		}
 
@@ -667,10 +674,10 @@ public class POSFeatureTemplates {
 	
 
 	public static List<TransFeatureTemplate> 
-	getTransFeatures(boolean useBiasFeature) {
+	getTransFeatures(boolean useBiasFeature, boolean[][] isTransIllegal) {
 		POSFeatureTemplates templates = new POSFeatureTemplates();
 		List<TransFeatureTemplate> transFeatures = new ArrayList<TransFeatureTemplate>();
-		transFeatures.add(templates.new TransIndicatorFeature());
+		transFeatures.add(templates.new TransIndicatorFeature(isTransIllegal));
 		if (useBiasFeature) {
 			transFeatures.add(templates.new BiasIndicatorFeature());
 		}

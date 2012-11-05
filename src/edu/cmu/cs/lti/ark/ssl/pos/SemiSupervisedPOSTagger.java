@@ -164,9 +164,13 @@ public class SemiSupervisedPOSTagger {
 	 * unlabeled observations
 	 */
 	private int[][] uObservations;
-
-	
-
+	/**
+	 * label1 -> {label2: is the transition from label1 to label2 forbidden, e.g. by a BIO constraint?}
+	 * Note: this will be used to set *values* for illegal transition feature activations to -Infinity.
+	 * (Conceptually we could set the *weights* for these features to -Infinity, but the LBFGS package 
+	 * uses the L2 norm of the weight vector to compute the stopping criterion, which would be Infinity.)
+	 */
+	private boolean[][] isTransIllegal;
 
 	public static void main(String[] args) {
 		POSOptions options = new POSOptions(args);
@@ -1031,12 +1035,18 @@ public class SemiSupervisedPOSTagger {
 		}
 
 		// Get feature templates
+		
+		int numLabels = indexToPOS.size();
+		if (options.bio.value)
+			setBIOConstraint(numLabels);
+		
+		
 		List<TransFeatureTemplate> transFeatures = null;
 		InterpolationFeatureTemplate interpolationFeature = 
 			null;
 		if (!useInterpolation) {
 			transFeatures = 
-				POSFeatureTemplates.getTransFeatures(useBiasFeature);
+				POSFeatureTemplates.getTransFeatures(useBiasFeature, isTransIllegal);
 		} else { // interpolation of existing multinomials
 			interpolationFeature =
 				POSFeatureTemplates.getInterpolationFeatures(numHelperLanguages);
@@ -1074,7 +1084,7 @@ public class SemiSupervisedPOSTagger {
 
 		// Do gradient ascent
 
-		int numLabels = indexToPOS.size();
+		
 
 		// checking if we are using only unlabeled data
 		if (useOnlyUnlabeledData) {
@@ -1288,8 +1298,6 @@ public class SemiSupervisedPOSTagger {
 			initialWeights = initializeFeatureWeightsWithTrainedValues(initialWeights);
 		else if (initTransProbs != null)
 			initialWeights = initializeFeatureWeightsWithInitialTransitionProbs(initialWeights, grad);
-		else if (options.bio.value)
-			initialWeights = initializeFeatureWeightsBIO(initialWeights, grad);
 		
 		if (useBiasFeature)
 			initialWeights[featureToIndex.get("bias")] = biasFeatureBias;
@@ -1323,7 +1331,7 @@ public class SemiSupervisedPOSTagger {
 			new GradientGenSequenceModel(uObservations,
 					stackedTags,
 					numLabels, indexToWord.size(),
-					printPosteriors); 
+					printPosteriors);
 		// Cache active features
 		activeTransFeatures = 
 			getActiveTransFeatures(transFeatures, 
@@ -1391,65 +1399,44 @@ public class SemiSupervisedPOSTagger {
 		return initialWeights;
 	}
 	
-	private double[] initializeFeatureWeightsBIO(
-			double[] initialWeights,
-			GradientSequenceModel grad) {
+	private void setBIOConstraint(int numInSeqLabels) {
 		System.out.println("Reading initial transition proababilities...");
-		int numLabels = grad.getNumLabels();
-		int startLabel = grad.getStartLabel();
-		int stopLabel = grad.getStopLabel();
+		int numLabels = numInSeqLabels+2;	// grad.getNumLabels();
+		int startLabel = numLabels-1;	// grad.getStartLabel();
+		int stopLabel = numLabels-2;	// grad.getStopLabel();
 		
 		int featLen = indexToFeature.size();
-		for (int i = 0; i < featLen; i++) {
-			String feat = indexToFeature.get(i);
-			if (!feat.startsWith("tind")) {
-				continue;
-			}
-			// transition feature
-			// read label indices from feature name
-			String[] toks = feat.trim().split("\\|");
-			int label1 = new Integer(toks[toks.length-2]);
-			int label2 = new Integer(toks[toks.length-1]);
-			/*
-			int index1 = label1;
-			int index2 = label2;
+		
+		this.isTransIllegal = new boolean[numLabels][numLabels];
+		
+		
+		
+		for (int label1=0; label1<numLabels; label1++) {
 			
-			if (label1 == startLabel)
-				index1 = initTransProbs.length - 1;
-			else if (label1 == stopLabel)
-				index1 = initTransProbs.length - 2;
+			if (label1==stopLabel)
+				continue;	// technically anything following the stop label is illegal, but that is enforced elsewhere
 			
-			if (label2 == startLabel)
-				index2 = initTransProbs.length - 1;
-			else if (label2 == stopLabel)
-				index2 = initTransProbs.length - 2;
-			*/
-			
-			if (label2==stopLabel)	// legal
-				continue;
-			
-			String lbl2 = indexToPOS.get(label2);
-			
-			if (lbl2.charAt(0)=='I') {
-				if (label1==startLabel) {	// illegal transition
-					initialWeights[i] = Double.NEGATIVE_INFINITY;
-					continue;
+			for (int label2=0; label2<numInSeqLabels; label2++) {
+				String lbl2 = indexToPOS.get(label2);
+				
+				if (lbl2.charAt(0)=='I') {
+					if (label1==startLabel) {	// illegal transition
+						isTransIllegal[label1][label2] = true;
+						continue;
+					}
+					String lbl1 = indexToPOS.get(label1);
+					if (lbl1.charAt(0)=='O' || !lbl1.substring(1).equals(lbl2.substring(1))){
+						// illegal transition
+						isTransIllegal[label1][label2] = true;
+					}
 				}
-				String lbl1 = indexToPOS.get(label1);
-				if (lbl1.charAt(0)=='O' || !lbl1.substring(1).equals(lbl2.substring(1))){
-					// illegal transition
-					initialWeights[i] = Double.NEGATIVE_INFINITY;
+				else if (lbl2.charAt(0)!='B' && !lbl2.equals("O")) {
+					System.err.println("Invalid BIO label (index "+label2+"): "+lbl2);
+					System.exit(1);
 				}
-			}
-			else if (lbl2.charAt(0)!='B' && !lbl2.equals("O")) {
-				System.err.println("Invalid BIO label (index "+label2+"): "+lbl2);
-				System.exit(1);
-			}
 			
-			//double prob = initTransProbs[index1][index2];
-			//initialWeights[i] = Math.log(prob);
+			}
 		}
-		return initialWeights;
 	}
 
 	private double[] initializeFeatureWeightsWithTrainedValues(double[] initialWeights) {
@@ -1753,6 +1740,10 @@ public class SemiSupervisedPOSTagger {
 		
 		System.out.println("Use tag dictionary..." + useTagDictionary);
 		numTags = indexToPOS.size();
+		
+		if (options.bio.value)
+			setBIOConstraint(numTags);
+		
 		if (useTagDictionary) {
 			System.out.println("Reading tag dictionary...");
 			readTagDictionary();
@@ -1786,7 +1777,7 @@ public class SemiSupervisedPOSTagger {
 		 */
 		// Cache active features
 		List<TransFeatureTemplate> transFeatures = 
-			POSFeatureTemplates.getTransFeatures(useBiasFeature);
+			POSFeatureTemplates.getTransFeatures(useBiasFeature, isTransIllegal);
 		List<EmitFeatureTemplate> emitFeatures = 
 			POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
 					lengthNGramSuffixFeature,
@@ -1924,6 +1915,10 @@ public class SemiSupervisedPOSTagger {
 		
 		System.out.println("Use tag dictionary..." + useTagDictionary);
 		numTags = indexToPOS.size();
+
+		if (options.bio.value)
+			setBIOConstraint(numTags);
+		
 		if (useTagDictionary) {
 			System.out.println("Reading tag dictionary...");
 			readTagDictionary();
@@ -1953,7 +1948,7 @@ public class SemiSupervisedPOSTagger {
 			}
 		}
 		List<TransFeatureTemplate> transFeatures = 
-			POSFeatureTemplates.getTransFeatures(useBiasFeature);
+			POSFeatureTemplates.getTransFeatures(useBiasFeature, isTransIllegal);
 		List<EmitFeatureTemplate> emitFeatures;
 		if (testSet!=null) {
 			emitFeatures = POSFeatureTemplates.getEmitFeatures(useStandardFeatures, 
