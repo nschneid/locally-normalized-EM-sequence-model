@@ -2173,7 +2173,7 @@ public class SemiSupervisedPOSTagger {
 				derivative += grad[f] * grad[f];
 			}
 			log.info("End of iteration:"+ iteration + "\nLog probability:" + margProb + "\nDerivative: " + derivative);
-			if(iteration % 10 == 0) {
+			if(iteration % printRate == 0) {
 				model.setWeights(weights);
 				BasicFileIO.writeSerializedObject(modelFile+"_"+iteration, model);
 			}
